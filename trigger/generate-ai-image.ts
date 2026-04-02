@@ -1,10 +1,13 @@
 import Replicate from "replicate"
 import type { Prediction } from "replicate"
 import { task, wait } from "@trigger.dev/sdk"
+import { DeleteObjectsCommand, S3Client } from "@aws-sdk/client-s3"
 
 export type GenerateReplicateImagePayload = {
   prompt: string
   inputImages: string[]
+  inputImageObjectKeys?: string[]
+  deleteInputImagesOnSuccess?: boolean
   resolution?: "0.25 MP" | "0.5 MP" | "1 MP"
   aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3"
   outputFormat?: "jpg" | "png" | "webp"
@@ -19,6 +22,41 @@ export type GenerateReplicateImageResult = {
 
 const MODEL = "black-forest-labs/flux-2-pro"
 export const GENERATE_REPLICATE_IMAGE_TASK_ID = "generate-replicate-image"
+
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`Missing ${name}`)
+  }
+  return value
+}
+
+async function deleteR2InputImages(objectKeys: string[]): Promise<void> {
+  if (objectKeys.length === 0) return
+
+  const accountId = requireEnv("R2_ACCOUNT_ID")
+  const bucket = requireEnv("R2_BUCKET")
+  const accessKeyId = requireEnv("R2_ACCESS_KEY_ID")
+  const secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY")
+
+  const r2Client = new S3Client({
+    region: "auto",
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  })
+
+  await r2Client.send(
+    new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: {
+        Objects: objectKeys.map((Key) => ({ Key })),
+      },
+    })
+  )
+}
 
 function extractImageUrl(output: unknown): string {
   if (typeof output === "string" && output.length > 0) {
@@ -95,8 +133,14 @@ export const generateReplicateImageTask = task({
       throw new Error("Replicate prediction failed")
     }
 
+    const imageUrl = extractImageUrl(result.output.output)
+
+    if (payload.deleteInputImagesOnSuccess) {
+      await deleteR2InputImages(payload.inputImageObjectKeys ?? [])
+    }
+
     return {
-      imageUrl: extractImageUrl(result.output.output),
+      imageUrl,
     }
   },
 })

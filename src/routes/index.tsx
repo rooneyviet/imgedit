@@ -25,33 +25,30 @@ type GalleryItem = {
   src?: string
 }
 
+type SelectedImageSlot = {
+  previewUrl: string
+  dataUrl: string
+}
+
 const MAX_SLOTS = 8
-const DEFAULT_INPUT_IMAGE_URLS = [
-  "https://replicate.delivery/pbxt/O7o67ArxiVtSQL9PlXRUt6WkFyudWGi4ig7Ez6u9vRNTW6XH/campfire.jpg",
-  "https://replicate.delivery/pbxt/O7nxUlRnxGieBbqXqeFkTddC3xVJpvLPajC3Hlbczk3FW1sI/jay-soundo.jpg",
-  "https://replicate.delivery/pbxt/O7nxUrruI8z37aQjPd0tniQAdkp86jNKlmr7NMpU4oa5hHXc/woman-by-car.jpg",
-]
 
 function App() {
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
-  const [inputImageUrlsText, setInputImageUrlsText] = useState(
-    DEFAULT_INPUT_IMAGE_URLS.join("\n")
-  )
   const [generateCount, setGenerateCount] = useState(4)
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
   const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
-  const [slots, setSlots] = useState<Array<string | null>>(
+  const [slots, setSlots] = useState<Array<SelectedImageSlot | null>>(
     Array.from({ length: MAX_SLOTS }, () => null)
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const fileInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
   const selectedImages = useMemo(
-    () => slots.filter((slot): slot is string => Boolean(slot)),
+    () => slots.flatMap((slot) => (slot ? [slot.dataUrl] : [])),
     [slots]
   )
 
@@ -67,32 +64,20 @@ function App() {
 
     const safeCount = Math.min(Math.max(generateCount || 1, 1), 24)
 
-    if (selectedImages.length === 0) {
-      return Array.from({ length: safeCount }, (_, i) => {
-        const safeWidth = Math.min(Math.max(width || 1024, 128), 4096)
-        const safeHeight = Math.min(Math.max(height || 1024, 128), 4096)
-        const text = prompt.trim() || "IMG Edit Preview"
-        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${safeWidth}' height='${safeHeight}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><text x='50%' y='45%' text-anchor='middle' fill='#f8fafc' font-family='monospace' font-size='34'>${escapeSvg(text)}</text><text x='50%' y='57%' text-anchor='middle' fill='#e2e8f0' font-family='monospace' font-size='22'>${safeWidth} x ${safeHeight} • #${i + 1}</text></svg>`
-
-        return {
-          id: `generated-${i + 1}`,
-          src: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
-          label: `Result ${i + 1}`,
-          status: "preview",
-        }
-      })
-    }
-
     return Array.from({ length: safeCount }, (_, i) => {
-      const src = selectedImages[i % selectedImages.length]
+      const safeWidth = Math.min(Math.max(width || 1024, 128), 4096)
+      const safeHeight = Math.min(Math.max(height || 1024, 128), 4096)
+      const text = prompt.trim() || "IMG Edit Preview"
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${safeWidth}' height='${safeHeight}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><text x='50%' y='45%' text-anchor='middle' fill='#f8fafc' font-family='monospace' font-size='34'>${escapeSvg(text)}</text><text x='50%' y='57%' text-anchor='middle' fill='#e2e8f0' font-family='monospace' font-size='22'>${safeWidth} x ${safeHeight} • #${i + 1}</text></svg>`
+
       return {
         id: `generated-${i + 1}`,
-        src,
+        src: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
         label: `Result ${i + 1}`,
         status: "preview",
       }
     })
-  }, [generateCount, generatedSlots, height, prompt, selectedImages, width])
+  }, [generateCount, generatedSlots, height, prompt, width])
 
   const selectedImage = useMemo(
     () =>
@@ -105,28 +90,27 @@ function App() {
     fileInputRefs.current[index]?.click()
   }
 
-  const onPickImage = (index: number, fileList: FileList | null) => {
+  const onPickImage = async (index: number, fileList: FileList | null) => {
     const file = fileList?.[0]
     if (!file) return
 
-    const url = URL.createObjectURL(file)
+    const dataUrl = await fileToDataUrl(file)
     setSlots((prev) => {
       const next = [...prev]
-      next[index] = url
+      next[index] = {
+        previewUrl: dataUrl,
+        dataUrl,
+      }
       return next
     })
   }
 
   const onGenerate = async () => {
-    const parsedInputUrls = inputImageUrlsText
-      .split(/\r?\n|,/g)
-      .map((value) => value.trim())
-      .filter(
-        (value) => value.startsWith("http://") || value.startsWith("https://")
-      )
+    if (selectedImages.length === 0) {
+      setGenerateError("Please select at least one input image")
+      return
+    }
 
-    const inputImages =
-      parsedInputUrls.length > 0 ? parsedInputUrls : DEFAULT_INPUT_IMAGE_URLS
     const safeCount = Math.min(Math.max(generateCount || 1, 1), MAX_SLOTS)
 
     setIsGenerating(true)
@@ -137,41 +121,31 @@ function App() {
     try {
       const payload = {
         prompt: prompt.trim() || "Edit this image with the reference subjects",
-        count: 1,
+        count: safeCount,
         resolution: "1 MP" as const,
         aspectRatio: "3:4" as const,
-        inputImages,
+        inputImagesDataUrls: selectedImages,
         outputFormat: "jpg" as const,
         outputQuality: 80,
         safetyTolerance: 2,
         promptUpsampling: false,
       }
 
-      const results = await Promise.allSettled(
-        Array.from({ length: safeCount }, async (_, index) => {
-          const response = await generateAiImagesServerFn({ data: payload })
-          const imageUrl = response.images[0]
-          if (!imageUrl) {
-            throw new Error(`Missing generated image for slot ${index + 1}`)
-          }
-
-          setGeneratedSlots((prev) => {
-            const next = [...prev]
-            next[index] = imageUrl
-            return next
-          })
-
-          setSelectedId((prev) => prev ?? `generated-${index + 1}`)
-        })
-      )
-
-      const failures = results.filter((result) => result.status === "rejected")
-      if (failures.length > 0) {
-        const firstFailure = failures[0]
-        if (firstFailure.status === "rejected") {
-          throw firstFailure.reason
-        }
+      const response = await generateAiImagesServerFn({ data: payload })
+      if (!Array.isArray(response.images) || response.images.length === 0) {
+        throw new Error("No generated images returned")
       }
+
+      const generated = Array.from({ length: safeCount }, (_, index) => {
+        const imageUrl = response.images[index]
+        if (!imageUrl) {
+          throw new Error(`Missing generated image for slot ${index + 1}`)
+        }
+        return imageUrl
+      })
+
+      setGeneratedSlots(generated)
+      setSelectedId("generated-1")
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image generation failed"
@@ -211,12 +185,14 @@ function App() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => onPickImage(index, e.target.files)}
+                      onChange={(e) => {
+                        void onPickImage(index, e.target.files)
+                      }}
                     />
 
                     {slot ? (
                       <img
-                        src={slot}
+                        src={slot.previewUrl}
                         alt={`Selected ${index + 1}`}
                         className="h-full w-full object-cover"
                       />
@@ -244,16 +220,10 @@ function App() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="input-urls">
-                  Input image URLs (one per line)
-                </Label>
-                <Textarea
-                  id="input-urls"
-                  value={inputImageUrlsText}
-                  onChange={(e) => setInputImageUrlsText(e.target.value)}
-                  placeholder="https://.../image-1.jpg"
-                  rows={4}
-                />
+                <Label>Input images</Label>
+                <p className="rounded border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  {selectedImages.length} image{selectedImages.length === 1 ? "" : "s"} selected
+                </p>
               </div>
 
               <div className="space-y-1.5">
@@ -380,4 +350,19 @@ function escapeSvg(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;")
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result)
+        return
+      }
+      reject(new Error("Failed to read selected image"))
+    }
+    reader.onerror = () => reject(new Error("Failed to read selected image"))
+    reader.readAsDataURL(file)
+  })
 }

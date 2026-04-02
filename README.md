@@ -8,6 +8,11 @@ This is a template for a new TanStack Start project with React, TypeScript, and 
    - `TRIGGER_SECRET_KEY`
    - `TRIGGER_PROJECT_REF`
    - `REPLICATE_API_TOKEN`
+   - `R2_ACCOUNT_ID`
+   - `R2_BUCKET`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_PUBLIC_BASE_URL`
 2. Start the app:
    - `docker compose up`
 3. In a second shell, run Trigger.dev dev worker:
