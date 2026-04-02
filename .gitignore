@@ -1,14 +1,33 @@
-node_modules
-.DS_Store
-dist
-dist-ssr
-*.local
-count.txt
-.env
-.nitro
-.tanstack
-.wrangler
-.output
-.vinxi
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+dist-ssr/
+.output/
+.nitro/
+.vinxi/
+.wrangler/
+
+# Caches and generated local tooling files
+.tanstack/
 __unconfig*
+
+# Env and local config
+.env
+.env.*
+*.local
+
+# Logs and coverage
+*.log
+coverage/
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Project-specific local files
+count.txt
 todos.json
