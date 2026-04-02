@@ -1,5 +1,6 @@
 import Replicate from "replicate"
-import { task } from "@trigger.dev/sdk"
+import type { Prediction } from "replicate"
+import { task, wait } from "@trigger.dev/sdk"
 
 export type GenerateReplicateImagePayload = {
   prompt: string
@@ -17,6 +18,7 @@ export type GenerateReplicateImageResult = {
 }
 
 const MODEL = "black-forest-labs/flux-2-pro"
+export const GENERATE_REPLICATE_IMAGE_TASK_ID = "generate-replicate-image"
 
 function extractImageUrl(output: unknown): string {
   if (typeof output === "string" && output.length > 0) {
@@ -52,7 +54,7 @@ function extractImageUrl(output: unknown): string {
 }
 
 export const generateReplicateImageTask = task({
-  id: "generate-replicate-image",
+  id: GENERATE_REPLICATE_IMAGE_TASK_ID,
   run: async (payload: GenerateReplicateImagePayload): Promise<GenerateReplicateImageResult> => {
     const apiToken = process.env.REPLICATE_API_TOKEN
     if (!apiToken) {
@@ -68,7 +70,12 @@ export const generateReplicateImageTask = task({
     }
 
     const replicate = new Replicate({ auth: apiToken })
-    const output = await replicate.run(MODEL, {
+    const token = await wait.createToken({
+      timeout: "10m",
+    })
+
+    await replicate.predictions.create({
+      model: MODEL,
       input: {
         prompt: payload.prompt,
         resolution: payload.resolution ?? "1 MP",
@@ -79,10 +86,17 @@ export const generateReplicateImageTask = task({
         safety_tolerance: payload.safetyTolerance ?? 2,
         prompt_upsampling: payload.promptUpsampling ?? false,
       },
+      webhook: token.url,
+      webhook_events_filter: ["completed"],
     })
 
+    const result = await wait.forToken<Prediction>(token)
+    if (!result.ok) {
+      throw new Error("Replicate prediction failed")
+    }
+
     return {
-      imageUrl: extractImageUrl(output),
+      imageUrl: extractImageUrl(result.output.output),
     }
   },
 })

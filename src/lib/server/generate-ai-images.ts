@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
+import { runs, tasks } from "@trigger.dev/sdk"
 
 import {
+  GENERATE_REPLICATE_IMAGE_TASK_ID,
   type GenerateReplicateImagePayload,
-  generateReplicateImageTask,
 } from "../../../trigger/generate-ai-image"
 
 type GenerateImagesRequest = GenerateReplicateImagePayload & {
@@ -18,6 +19,19 @@ const MAX_GENERATED_IMAGES = 8
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   return "Unknown error while generating image"
+}
+
+function extractRunOutputImageUrl(output: unknown): string {
+  if (!output || typeof output !== "object") {
+    throw new Error("Missing task output")
+  }
+
+  const value = (output as { imageUrl?: unknown }).imageUrl
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error("Task output did not include imageUrl")
+  }
+
+  return value
 }
 
 function toRequest(input: unknown): GenerateImagesRequest {
@@ -64,7 +78,7 @@ export const generateAiImages = createServerFn({ method: "POST" })
     const images: string[] = []
 
     for (let i = 0; i < count; i++) {
-      const run = await generateReplicateImageTask.triggerAndWait({
+      const handle = await tasks.trigger(GENERATE_REPLICATE_IMAGE_TASK_ID, {
         prompt: input.prompt,
         inputImages: input.inputImages,
         resolution: input.resolution,
@@ -75,11 +89,12 @@ export const generateAiImages = createServerFn({ method: "POST" })
         promptUpsampling: input.promptUpsampling,
       })
 
-      if (!run.ok) {
+      const run = await runs.poll(handle.id, { pollIntervalMs: 1000 })
+      if (!run.isSuccess) {
         throw new Error(getErrorMessage(run.error))
       }
 
-      images.push(run.output.imageUrl)
+      images.push(extractRunOutputImageUrl(run.output))
     }
 
     return { images }
