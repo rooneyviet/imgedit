@@ -2,6 +2,17 @@
 
 This is a template for a new TanStack Start project with React, TypeScript, and shadcn/ui.
 
+## Trigger.dev + Replicate setup
+
+1. Copy `.env.example` to `.env` and fill in:
+   - `TRIGGER_SECRET_KEY`
+   - `TRIGGER_PROJECT_REF`
+   - `REPLICATE_API_TOKEN`
+2. Start the app:
+   - `docker compose up`
+3. In a second shell, run Trigger.dev dev worker:
+   - `docker compose run --rm app sh -lc "corepack enable && pnpm run dev:trigger"`
+
 ## Adding components
 
 To add components to your app, run the following command:

@@ -9,6 +9,7 @@ dist-ssr/
 .nitro/
 .vinxi/
 .wrangler/
+.trigger/
 
 # Caches and generated local tooling files
 .tanstack/

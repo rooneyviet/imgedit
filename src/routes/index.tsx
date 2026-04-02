@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { useServerFn } from "@tanstack/react-start"
 import { ImagePlus, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { generateAiImages } from "@/lib/server/generate-ai-images"
 import { Textarea } from "@/components/ui/textarea"
 
 export const Route = createFileRoute("/")({ component: App })
@@ -17,12 +19,22 @@ type GalleryItem = {
 }
 
 const MAX_SLOTS = 8
+const DEFAULT_INPUT_IMAGE_URLS = [
+  "https://replicate.delivery/pbxt/O7o67ArxiVtSQL9PlXRUt6WkFyudWGi4ig7Ez6u9vRNTW6XH/campfire.jpg",
+  "https://replicate.delivery/pbxt/O7nxUlRnxGieBbqXqeFkTddC3xVJpvLPajC3Hlbczk3FW1sI/jay-soundo.jpg",
+  "https://replicate.delivery/pbxt/O7nxUrruI8z37aQjPd0tniQAdkp86jNKlmr7NMpU4oa5hHXc/woman-by-car.jpg",
+]
 
 function App() {
+  const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
+  const [inputImageUrlsText, setInputImageUrlsText] = useState(DEFAULT_INPUT_IMAGE_URLS.join("\n"))
   const [generateCount, setGenerateCount] = useState(4)
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
+  const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const [slots, setSlots] = useState<Array<string | null>>(
     Array.from({ length: MAX_SLOTS }, () => null),
   )
@@ -32,6 +44,14 @@ function App() {
   const selectedImages = useMemo(() => slots.filter((slot): slot is string => Boolean(slot)), [slots])
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
+    if (generatedImageUrls.length > 0) {
+      return generatedImageUrls.map((src, i) => ({
+        id: `generated-${i + 1}`,
+        src,
+        label: `Result ${i + 1}`,
+      }))
+    }
+
     const safeCount = Math.min(Math.max(generateCount || 1, 1), 24)
 
     if (selectedImages.length === 0) {
@@ -57,7 +77,7 @@ function App() {
         label: `Result ${i + 1}`,
       }
     })
-  }, [generateCount, height, prompt, selectedImages, width])
+  }, [generateCount, generatedImageUrls, height, prompt, selectedImages, width])
 
   const selectedImage = useMemo(
     () => generatedImages.find((item) => item.id === selectedId) ?? generatedImages[0],
@@ -80,9 +100,41 @@ function App() {
     })
   }
 
-  const onGenerate = () => {
-    const firstImage = generatedImages[0]
-    setSelectedId(firstImage?.id ?? null)
+  const onGenerate = async () => {
+    const parsedInputUrls = inputImageUrlsText
+      .split(/\r?\n|,/g)
+      .map((value) => value.trim())
+      .filter((value) => value.startsWith("http://") || value.startsWith("https://"))
+
+    const inputImages = parsedInputUrls.length > 0 ? parsedInputUrls : DEFAULT_INPUT_IMAGE_URLS
+    const safeCount = Math.min(Math.max(generateCount || 1, 1), MAX_SLOTS)
+
+    setIsGenerating(true)
+    setGenerateError(null)
+
+    try {
+      const response = await generateAiImagesServerFn({
+        data: {
+          prompt: prompt.trim() || "Edit this image with the reference subjects",
+          count: safeCount,
+          resolution: "1 MP",
+          aspectRatio: "3:4",
+          inputImages,
+          outputFormat: "jpg",
+          outputQuality: 80,
+          safetyTolerance: 2,
+          promptUpsampling: false,
+        },
+      })
+
+      setGeneratedImageUrls(response.images)
+      setSelectedId(response.images.length > 0 ? "generated-1" : null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Image generation failed"
+      setGenerateError(message)
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
@@ -91,7 +143,7 @@ function App() {
         <Card className="bg-white/85 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-2xl tracking-tight">IMG Edit</CardTitle>
-            <CardDescription>Single page editor UI (no API)</CardDescription>
+            <CardDescription>Trigger.dev + Replicate workflow</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -142,6 +194,17 @@ function App() {
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="input-urls">Input image URLs (one per line)</Label>
+                <Textarea
+                  id="input-urls"
+                  value={inputImageUrlsText}
+                  onChange={(e) => setInputImageUrlsText(e.target.value)}
+                  placeholder="https://.../image-1.jpg"
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="count">How many images to generate</Label>
                 <Input
                   id="count"
@@ -178,10 +241,17 @@ function App() {
                 </div>
               </div>
 
-              <Button type="button" onClick={onGenerate} className="mt-1 flex w-full items-center gap-2">
+              <Button
+                type="button"
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className="mt-1 flex w-full items-center gap-2"
+              >
                 <Upload size={16} />
-                Generate
+                {isGenerating ? "Generating..." : "Generate"}
               </Button>
+
+              {generateError ? <p className="text-sm text-red-600">{generateError}</p> : null}
             </section>
           </CardContent>
         </Card>
