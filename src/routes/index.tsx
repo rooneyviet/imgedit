@@ -4,7 +4,13 @@ import { useServerFn } from "@tanstack/react-start"
 import { ImagePlus, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
@@ -14,8 +20,9 @@ export const Route = createFileRoute("/")({ component: App })
 
 type GalleryItem = {
   id: string
-  src: string
   label: string
+  status: "preview" | "loading" | "ready" | "error"
+  src?: string
 }
 
 const MAX_SLOTS = 8
@@ -28,27 +35,33 @@ const DEFAULT_INPUT_IMAGE_URLS = [
 function App() {
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
-  const [inputImageUrlsText, setInputImageUrlsText] = useState(DEFAULT_INPUT_IMAGE_URLS.join("\n"))
+  const [inputImageUrlsText, setInputImageUrlsText] = useState(
+    DEFAULT_INPUT_IMAGE_URLS.join("\n")
+  )
   const [generateCount, setGenerateCount] = useState(4)
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
-  const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([])
+  const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [slots, setSlots] = useState<Array<string | null>>(
-    Array.from({ length: MAX_SLOTS }, () => null),
+    Array.from({ length: MAX_SLOTS }, () => null)
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const fileInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
-  const selectedImages = useMemo(() => slots.filter((slot): slot is string => Boolean(slot)), [slots])
+  const selectedImages = useMemo(
+    () => slots.filter((slot): slot is string => Boolean(slot)),
+    [slots]
+  )
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
-    if (generatedImageUrls.length > 0) {
-      return generatedImageUrls.map((src, i) => ({
+    if (generatedSlots.length > 0) {
+      return generatedSlots.map((src, i) => ({
         id: `generated-${i + 1}`,
-        src,
         label: `Result ${i + 1}`,
+        status: src ? "ready" : "loading",
+        src: src ?? undefined,
       }))
     }
 
@@ -65,6 +78,7 @@ function App() {
           id: `generated-${i + 1}`,
           src: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`,
           label: `Result ${i + 1}`,
+          status: "preview",
         }
       })
     }
@@ -75,13 +89,16 @@ function App() {
         id: `generated-${i + 1}`,
         src,
         label: `Result ${i + 1}`,
+        status: "preview",
       }
     })
-  }, [generateCount, generatedImageUrls, height, prompt, selectedImages, width])
+  }, [generateCount, generatedSlots, height, prompt, selectedImages, width])
 
   const selectedImage = useMemo(
-    () => generatedImages.find((item) => item.id === selectedId) ?? generatedImages[0],
-    [generatedImages, selectedId],
+    () =>
+      generatedImages.find((item) => item.id === selectedId) ??
+      generatedImages[0],
+    [generatedImages, selectedId]
   )
 
   const openFilePicker = (index: number) => {
@@ -104,33 +121,60 @@ function App() {
     const parsedInputUrls = inputImageUrlsText
       .split(/\r?\n|,/g)
       .map((value) => value.trim())
-      .filter((value) => value.startsWith("http://") || value.startsWith("https://"))
+      .filter(
+        (value) => value.startsWith("http://") || value.startsWith("https://")
+      )
 
-    const inputImages = parsedInputUrls.length > 0 ? parsedInputUrls : DEFAULT_INPUT_IMAGE_URLS
+    const inputImages =
+      parsedInputUrls.length > 0 ? parsedInputUrls : DEFAULT_INPUT_IMAGE_URLS
     const safeCount = Math.min(Math.max(generateCount || 1, 1), MAX_SLOTS)
 
     setIsGenerating(true)
     setGenerateError(null)
+    setGeneratedSlots(Array.from({ length: safeCount }, () => null))
+    setSelectedId("generated-1")
 
     try {
-      const response = await generateAiImagesServerFn({
-        data: {
-          prompt: prompt.trim() || "Edit this image with the reference subjects",
-          count: safeCount,
-          resolution: "1 MP",
-          aspectRatio: "3:4",
-          inputImages,
-          outputFormat: "jpg",
-          outputQuality: 80,
-          safetyTolerance: 2,
-          promptUpsampling: false,
-        },
-      })
+      const payload = {
+        prompt: prompt.trim() || "Edit this image with the reference subjects",
+        count: 1,
+        resolution: "1 MP" as const,
+        aspectRatio: "3:4" as const,
+        inputImages,
+        outputFormat: "jpg" as const,
+        outputQuality: 80,
+        safetyTolerance: 2,
+        promptUpsampling: false,
+      }
 
-      setGeneratedImageUrls(response.images)
-      setSelectedId(response.images.length > 0 ? "generated-1" : null)
+      const results = await Promise.allSettled(
+        Array.from({ length: safeCount }, async (_, index) => {
+          const response = await generateAiImagesServerFn({ data: payload })
+          const imageUrl = response.images[0]
+          if (!imageUrl) {
+            throw new Error(`Missing generated image for slot ${index + 1}`)
+          }
+
+          setGeneratedSlots((prev) => {
+            const next = [...prev]
+            next[index] = imageUrl
+            return next
+          })
+
+          setSelectedId((prev) => prev ?? `generated-${index + 1}`)
+        })
+      )
+
+      const failures = results.filter((result) => result.status === "rejected")
+      if (failures.length > 0) {
+        const firstFailure = failures[0]
+        if (firstFailure.status === "rejected") {
+          throw firstFailure.reason
+        }
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Image generation failed"
+      const message =
+        error instanceof Error ? error.message : "Image generation failed"
       setGenerateError(message)
     } finally {
       setIsGenerating(false)
@@ -148,7 +192,9 @@ function App() {
 
           <CardContent>
             <section>
-              <h2 className="text-sm font-medium text-slate-900">Image Placeholders</h2>
+              <h2 className="text-sm font-medium text-slate-900">
+                Image Placeholders
+              </h2>
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {slots.map((slot, index) => (
                   <Button
@@ -169,7 +215,11 @@ function App() {
                     />
 
                     {slot ? (
-                      <img src={slot} alt={`Selected ${index + 1}`} className="h-full w-full object-cover" />
+                      <img
+                        src={slot}
+                        alt={`Selected ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
                         <ImagePlus size={16} />
@@ -194,7 +244,9 @@ function App() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="input-urls">Input image URLs (one per line)</Label>
+                <Label htmlFor="input-urls">
+                  Input image URLs (one per line)
+                </Label>
                 <Textarea
                   id="input-urls"
                   value={inputImageUrlsText}
@@ -251,7 +303,9 @@ function App() {
                 {isGenerating ? "Generating..." : "Generate"}
               </Button>
 
-              {generateError ? <p className="text-sm text-red-600">{generateError}</p> : null}
+              {generateError ? (
+                <p className="text-sm text-red-600">{generateError}</p>
+              ) : null}
             </section>
           </CardContent>
         </Card>
@@ -259,7 +313,11 @@ function App() {
         <Card className="bg-white/85 backdrop-blur">
           <CardContent className="p-4 md:p-5">
             <div className="border border-border bg-muted p-2">
-              {selectedImage ? (
+              {selectedImage?.status === "loading" ? (
+                <div className="flex h-[44vh] w-full items-center justify-center bg-slate-100 sm:h-[56vh]">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-slate-700" />
+                </div>
+              ) : selectedImage?.src ? (
                 <img
                   src={selectedImage.src}
                   alt={selectedImage.label}
@@ -273,7 +331,9 @@ function App() {
             </div>
 
             <div className="mt-4">
-              <h2 className="text-sm font-medium text-slate-900">Generated Images</h2>
+              <h2 className="text-sm font-medium text-slate-900">
+                Generated Images
+              </h2>
               <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
                 {generatedImages.map((item) => {
                   const active = selectedImage?.id === item.id
@@ -286,7 +346,21 @@ function App() {
                       onClick={() => setSelectedId(item.id)}
                       className={`h-auto overflow-hidden p-0 ${active ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
                     >
-                      <img src={item.src} alt={item.label} className="aspect-square w-full object-cover" />
+                      {item.status === "loading" ? (
+                        <span className="flex aspect-square w-full items-center justify-center bg-slate-100">
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                        </span>
+                      ) : item.src ? (
+                        <img
+                          src={item.src}
+                          alt={item.label}
+                          className="aspect-square w-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex aspect-square w-full items-center justify-center bg-slate-200 text-xs text-slate-500">
+                          {item.label}
+                        </span>
+                      )}
                     </Button>
                   )
                 })}
