@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start"
-import { ImagePlus, Upload } from "lucide-react"
+import { ImagePlus, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -105,6 +105,17 @@ function App() {
     })
   }
 
+  const onRemoveImage = (index: number) => {
+    setSlots((prev) => {
+      const next = [...prev]
+      next[index] = null
+      return next
+    })
+
+    const input = fileInputRefs.current[index]
+    if (input) input.value = ""
+  }
+
   const onGenerate = async () => {
     if (selectedImages.length === 0) {
       setGenerateError("Please select at least one input image")
@@ -171,13 +182,7 @@ function App() {
               </h2>
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {slots.map((slot, index) => (
-                  <Button
-                    key={`slot-${index + 1}`}
-                    type="button"
-                    variant="outline"
-                    onClick={() => openFilePicker(index)}
-                    className="relative aspect-square h-auto w-full overflow-hidden border-dashed p-0"
-                  >
+                  <div key={`slot-${index + 1}`} className="relative">
                     <input
                       ref={(el) => {
                         fileInputRefs.current[index] = el
@@ -190,19 +195,37 @@ function App() {
                       }}
                     />
 
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => openFilePicker(index)}
+                      className="relative aspect-square h-auto w-full overflow-hidden border-dashed p-0"
+                    >
+                      {slot ? (
+                        <img
+                          src={slot.previewUrl}
+                          alt={`Selected ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                          <ImagePlus size={16} />
+                          <span className="text-[10px]">{index + 1}</span>
+                        </span>
+                      )}
+                    </Button>
+
                     {slot ? (
-                      <img
-                        src={slot.previewUrl}
-                        alt={`Selected ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
-                        <ImagePlus size={16} />
-                        <span className="text-[10px]">{index + 1}</span>
-                      </span>
-                    )}
-                  </Button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveImage(index)}
+                        aria-label={`Remove image ${index + 1}`}
+                        className="absolute top-0 right-0 z-10 inline-flex h-5 w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/10 bg-background/50 text-red-500 shadow-sm transition hover:bg-background"
+                      >
+                        <X size={12} />
+                      </button>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             </section>
@@ -222,7 +245,8 @@ function App() {
               <div className="space-y-1.5">
                 <Label>Input images</Label>
                 <p className="rounded border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-                  {selectedImages.length} image{selectedImages.length === 1 ? "" : "s"} selected
+                  {selectedImages.length} image
+                  {selectedImages.length === 1 ? "" : "s"} selected
                 </p>
               </div>
 
