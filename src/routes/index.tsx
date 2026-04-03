@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -30,12 +37,17 @@ type SelectedImageSlot = {
   dataUrl: string
 }
 
-const MAX_SLOTS = 8
+const MAX_SLOTS = 3
+const MAX_GENERATE_COUNT = 4
+const GENERATE_COUNT_OPTIONS = Array.from(
+  { length: MAX_GENERATE_COUNT },
+  (_, i) => i + 1
+)
 
 function App() {
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
-  const [generateCount, setGenerateCount] = useState(4)
+  const [generateCount, setGenerateCount] = useState(1)
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
   const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
@@ -51,6 +63,10 @@ function App() {
     () => slots.flatMap((slot) => (slot ? [slot.dataUrl] : [])),
     [slots]
   )
+  const isGenerateDisabled =
+    isGenerating ||
+    selectedImages.length === 0 ||
+    prompt.trim().length === 0
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
     if (generatedSlots.length > 0) {
@@ -62,7 +78,10 @@ function App() {
       }))
     }
 
-    const safeCount = Math.min(Math.max(generateCount || 1, 1), 24)
+    const safeCount = Math.min(
+      Math.max(generateCount || 1, 1),
+      MAX_GENERATE_COUNT
+    )
 
     return Array.from({ length: safeCount }, (_, i) => {
       const safeWidth = Math.min(Math.max(width || 1024, 128), 4096)
@@ -122,7 +141,10 @@ function App() {
       return
     }
 
-    const safeCount = Math.min(Math.max(generateCount || 1, 1), MAX_SLOTS)
+    const safeCount = Math.min(
+      Math.max(generateCount || 1, 1),
+      MAX_GENERATE_COUNT
+    )
 
     setIsGenerating(true)
     setGenerateError(null)
@@ -180,7 +202,7 @@ function App() {
               <h2 className="text-sm font-medium text-slate-900">
                 Image Placeholders
               </h2>
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-3">
                 {slots.map((slot, index) => (
                   <div key={`slot-${index + 1}`} className="relative">
                     <input
@@ -215,7 +237,7 @@ function App() {
                       )}
                     </Button>
 
-                    {slot ? (
+                    {slot && !isGenerating ? (
                       <button
                         type="button"
                         onClick={() => onRemoveImage(index)}
@@ -252,14 +274,21 @@ function App() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="count">How many images to generate</Label>
-                <Input
-                  id="count"
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={generateCount}
-                  onChange={(e) => setGenerateCount(Number(e.target.value))}
-                />
+                <Select
+                  value={String(generateCount)}
+                  onValueChange={(value) => setGenerateCount(Number(value))}
+                >
+                  <SelectTrigger id="count">
+                    <SelectValue placeholder="Select count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GENERATE_COUNT_OPTIONS.map((count) => (
+                      <SelectItem key={count} value={String(count)}>
+                        {count}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -290,7 +319,7 @@ function App() {
               <Button
                 type="button"
                 onClick={onGenerate}
-                disabled={isGenerating}
+                disabled={isGenerateDisabled}
                 className="mt-1 flex w-full items-center gap-2"
               >
                 <Upload size={16} />
