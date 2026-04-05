@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      DEPLOY_PATH: /var/www/imgedit
+      DEPLOY_PATH: /home/${{ secrets.VPS_USER }}/imgedit
 
     steps:
       - name: Checkout

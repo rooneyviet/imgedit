@@ -4,6 +4,7 @@ This project now includes:
 
 - Workflow: `.github/workflows/deploy-caddy.yml`
 - Deploy strategy: build `dist/` in CI, upload to VPS, switch `current` symlink
+- Deploy path on VPS: `/home/YOUR_VPS_USER/imgedit`
 
 Important:
 
@@ -30,11 +31,11 @@ ssh-keygen -t ed25519 -C "imgedit-deploy"
 ssh-copy-id YOUR_VPS_USER@YOUR_VPS_IP
 ```
 
-### 1.3 Create web directory owned by deploy user
+### 1.3 Create deploy directory (no sudo required)
 
 ```bash
-sudo mkdir -p /var/www/imgedit/releases
-sudo chown -R YOUR_VPS_USER:YOUR_VPS_USER /var/www/imgedit
+mkdir -p ~/imgedit/releases
+chmod 755 ~ ~/imgedit ~/imgedit/releases
 ```
 
 ### 1.4 Configure Caddy
@@ -49,7 +50,7 @@ Example site block:
 
 ```caddy
 imgedit.yourdomain.com {
-    root * /var/www/imgedit/current
+    root * /home/YOUR_VPS_USER/imgedit/current
     encode gzip zstd
     file_server
     try_files {path} /index.html
@@ -93,7 +94,7 @@ Use that exact private key file for `VPS_SSH_KEY`.
 Real example:
 
 - user: `debian`
-- host: `VPS_LOGIN`
+- host: `YOUR_VPS_IP_OR_HOSTNAME`
 - key: `~/.ssh/id_rsa`
 
 ### 2.3 Add required Actions secrets
@@ -108,7 +109,7 @@ Notes:
 
 - `VPS_SSH_KEY` must be the private key matching the public key installed for `VPS_USER`.
 - Example for your current VPS login:
-  - `gh secret set VPS_HOST --body "VPS_IP"`
+  - `gh secret set VPS_HOST --body "YOUR_VPS_IP_OR_HOSTNAME"`
   - `gh secret set VPS_USER --body "debian"`
   - `gh secret set VPS_SSH_KEY < ~/.ssh/id_rsa`
 
@@ -133,10 +134,10 @@ gh run watch
 2. It builds production assets using project policy command style:
    - `docker compose run --rm app ... pnpm build`
 3. It creates a release directory on VPS:
-   - `/var/www/imgedit/releases/<sha-run>`
+   - `/home/YOUR_VPS_USER/imgedit/releases/<sha-run>`
 4. It uploads local `dist/` to that release via `rsync`.
 5. It atomically updates symlink:
-   - `/var/www/imgedit/current -> /var/www/imgedit/releases/<new-release>`
+   - `/home/YOUR_VPS_USER/imgedit/current -> /home/YOUR_VPS_USER/imgedit/releases/<new-release>`
 6. It prunes old releases and keeps the latest 5.
 
 No container is used on VPS for serving static files. Caddy serves files directly.
@@ -147,12 +148,12 @@ If needed:
 
 ```bash
 ssh YOUR_VPS_USER@YOUR_VPS_IP
-ls -1dt /var/www/imgedit/releases/*
-ln -sfn /var/www/imgedit/releases/PAST_RELEASE /var/www/imgedit/current
+ls -1dt /home/YOUR_VPS_USER/imgedit/releases/*
+ln -sfn /home/YOUR_VPS_USER/imgedit/releases/PAST_RELEASE /home/YOUR_VPS_USER/imgedit/current
 ```
 
 ## 5) Troubleshooting
 
 - If workflow cannot SSH: check `VPS_USER`, `VPS_HOST`, key pair, and `~/.ssh/authorized_keys` on VPS.
 - If app loads blank on deep routes: confirm Caddy has `try_files {path} /index.html`.
-- If deploy uploads but site does not update: verify Caddy root is exactly `/var/www/imgedit/current`.
+- If deploy uploads but site does not update: verify Caddy root is exactly `/home/YOUR_VPS_USER/imgedit/current`.
