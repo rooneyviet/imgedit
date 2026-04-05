@@ -1,3 +1,8 @@
+/**
+ * Validates an image input, triggers the upscale task, and returns the upscaled image URL.
+ * @param {UpscaleReplicateImagePayload} data - Source image data or URL to upscale.
+ * @returns {Promise<UpscaleImageResponse>} Upscaled image URL.
+ */
 import { createServerFn } from "@tanstack/react-start"
 import { runs, tasks } from "@trigger.dev/sdk"
 
