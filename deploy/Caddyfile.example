@@ -1,0 +1,8 @@
+your-domain.com {
+  encode zstd gzip
+
+  @static path /favicon.ico /robots.txt /manifest.json /assets/*
+  header @static Cache-Control "public, max-age=31536000, immutable"
+
+  reverse_proxy 127.0.0.1:3000
+}

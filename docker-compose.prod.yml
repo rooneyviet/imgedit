@@ -1,0 +1,12 @@
+services:
+  app:
+    container_name: imgedit-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: imgedit:latest
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      - "127.0.0.1:3000:3000"
