@@ -3,7 +3,7 @@ name: Deploy Static Site To Debian VPS (Caddy)
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:

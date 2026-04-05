@@ -5,30 +5,36 @@ This project now includes:
 - Workflow: `.github/workflows/deploy-caddy.yml`
 - Deploy strategy: build `dist/` in CI, upload to VPS, switch `current` symlink
 
+Important:
+
+- You do NOT run `docker compose` on your VPS for this setup.
+- `docker compose` runs in GitHub Actions only, to build `dist/`.
+- Deploy to VPS is automatic on each push to `master`.
+
 ## 1) Debian VPS one-time setup
 
-### 1.1 Create deploy user
+### 1.1 Choose SSH user
 
-Use an existing non-root user or create one:
+Use an existing non-root user (for example `debian`) or create one:
 
 ```bash
 sudo adduser deploy
 ```
 
-### 1.2 Set up SSH key auth for deploy user
+### 1.2 Set up SSH key auth for selected user
 
 On your local machine:
 
 ```bash
 ssh-keygen -t ed25519 -C "imgedit-deploy"
-ssh-copy-id deploy@YOUR_VPS_IP
+ssh-copy-id YOUR_VPS_USER@YOUR_VPS_IP
 ```
 
 ### 1.3 Create web directory owned by deploy user
 
 ```bash
 sudo mkdir -p /var/www/imgedit/releases
-sudo chown -R deploy:deploy /var/www/imgedit
+sudo chown -R YOUR_VPS_USER:YOUR_VPS_USER /var/www/imgedit
 ```
 
 ### 1.4 Configure Caddy
@@ -69,28 +75,52 @@ Run these commands from your repo root.
 gh auth login
 ```
 
-### 2.2 Add required Actions secrets
+### 2.2 Find the exact SSH key you already use (recommended)
+
+If you can already SSH into VPS without password, detect the exact key path first:
+
+```bash
+ssh -vv YOUR_VPS_USER@YOUR_VPS_IP
+```
+
+Look for:
+
+- `Offering public key: /Users/.../.ssh/<keyname>`
+- `Server accepts key: /Users/.../.ssh/<keyname>`
+
+Use that exact private key file for `VPS_SSH_KEY`.
+
+Real example:
+
+- user: `debian`
+- host: `VPS_LOGIN`
+- key: `~/.ssh/id_rsa`
+
+### 2.3 Add required Actions secrets
 
 ```bash
 gh secret set VPS_HOST --body "YOUR_VPS_IP_OR_HOSTNAME"
-gh secret set VPS_USER --body "deploy"
-gh secret set VPS_SSH_KEY < ~/.ssh/id_ed25519
+gh secret set VPS_USER --body "YOUR_VPS_USER"
+gh secret set VPS_SSH_KEY < ~/.ssh/YOUR_KEY_FILE
 ```
 
 Notes:
 
 - `VPS_SSH_KEY` must be the private key matching the public key installed for `VPS_USER`.
-- If your key file is not `~/.ssh/id_ed25519`, change the path.
+- Example for your current VPS login:
+  - `gh secret set VPS_HOST --body "VPS_IP"`
+  - `gh secret set VPS_USER --body "debian"`
+  - `gh secret set VPS_SSH_KEY < ~/.ssh/id_rsa`
 
-### 2.3 Push to `main` to trigger deploy
+### 2.4 Push to `master` to trigger deploy
 
 ```bash
 git add .github/workflows/deploy-caddy.yml docs/deploy-caddy-vps.md
 git commit -m "Add Caddy VPS CI/CD deployment workflow"
-git push origin main
+git push origin master
 ```
 
-### 2.4 Watch workflow runs with GH CLI
+### 2.5 Watch workflow runs with GH CLI
 
 ```bash
 gh run list --workflow "Deploy Static Site To Debian VPS (Caddy)"
@@ -99,7 +129,7 @@ gh run watch
 
 ## 3) How this deploy pipeline works
 
-1. On push to `main`, GitHub Actions starts.
+1. On push to `master`, GitHub Actions starts.
 2. It builds production assets using project policy command style:
    - `docker compose run --rm app ... pnpm build`
 3. It creates a release directory on VPS:
@@ -116,7 +146,7 @@ No container is used on VPS for serving static files. Caddy serves files directl
 If needed:
 
 ```bash
-ssh deploy@YOUR_VPS_IP
+ssh YOUR_VPS_USER@YOUR_VPS_IP
 ls -1dt /var/www/imgedit/releases/*
 ln -sfn /var/www/imgedit/releases/PAST_RELEASE /var/www/imgedit/current
 ```
