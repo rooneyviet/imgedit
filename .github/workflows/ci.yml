@@ -61,11 +61,17 @@ jobs:
           script_stop: true
           script: |
             APP_DIR="$HOME/imgedit"
+            REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
             mkdir -p "$APP_DIR"
 
+            if [ -z "${GITHUB_TOKEN:-}" ]; then
+              echo "GITHUB_TOKEN is empty on remote session"
+              exit 1
+            fi
+
             if [ ! -d "$APP_DIR/.git" ]; then
-              git -c http.extraheader="Authorization: Bearer $GITHUB_TOKEN" clone "https://github.com/${GITHUB_REPOSITORY}.git" "$APP_DIR"
+              git clone "$REPO_URL" "$APP_DIR"
             fi
 
             cat > "$APP_DIR/.env.production" <<EOF
@@ -81,4 +87,4 @@ jobs:
 
             cd "$APP_DIR"
             chmod +x deploy/deploy.sh
-            APP_DIR="$APP_DIR" BRANCH=master ./deploy/deploy.sh
+            APP_DIR="$APP_DIR" BRANCH=master REPO_URL="$REPO_URL" ./deploy/deploy.sh
