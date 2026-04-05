@@ -1,103 +1,104 @@
-# Deploy to Debian VPS with Caddy + GitHub Actions CI/CD
+# Deploy to Debian VPS with Caddy + GitHub Actions (TanStack Start / Nitro)
 
-This project now includes:
+This app is a TanStack Start server app (Nitro), not a static-only site.
+Deployment uses:
 
-- Workflow: `.github/workflows/deploy-caddy.yml`
-- Deploy strategy: build `dist/` in CI, upload to VPS, switch `current` symlink
-- Deploy path on VPS: `/home/YOUR_VPS_USER/imgedit`
+- GitHub Actions to build `.output` with `docker compose`
+- SSH deploy to VPS release folders
+- `systemd` service to run `node .output/server/index.mjs`
+- Caddy as reverse proxy to `127.0.0.1:3000`
 
-Important:
+## 1) One-time VPS setup
 
-- You do NOT run `docker compose` on your VPS for this setup.
-- `docker compose` runs in GitHub Actions only, to build `dist/`.
-- Deploy to VPS is automatic on each push to `master`.
+### 1.1 Choose deploy user
 
-## 1) Debian VPS one-time setup
+Use your existing user (example: `debian`) or create one.
 
-### 1.1 Choose SSH user
-
-Use an existing non-root user (for example `debian`) or create one:
+### 1.2 Install Node.js runtime (required on VPS)
 
 ```bash
-sudo adduser deploy
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v
 ```
 
-### 1.2 Set up SSH key auth for selected user
+### 1.3 Create deploy directories
 
-On your local machine:
+Run as deploy user:
 
 ```bash
-ssh-keygen -t ed25519 -C "imgedit-deploy"
-ssh-copy-id YOUR_VPS_USER@YOUR_VPS_IP
+mkdir -p ~/imgedit/releases ~/imgedit/shared
+chmod 755 ~ ~/imgedit ~/imgedit/releases ~/imgedit/shared
 ```
 
-### 1.3 Create deploy directory (no sudo required)
+### 1.4 Create systemd service
+
+Create `/etc/systemd/system/imgedit.service`:
+
+```ini
+[Unit]
+Description=IMG Edit TanStack Start server
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_VPS_USER
+WorkingDirectory=/home/YOUR_VPS_USER/imgedit/current
+EnvironmentFile=/home/YOUR_VPS_USER/imgedit/shared/.env
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node /home/YOUR_VPS_USER/imgedit/current/.output/server/index.mjs
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable service:
 
 ```bash
-mkdir -p ~/imgedit/releases
-chmod 755 ~ ~/imgedit ~/imgedit/releases
+sudo systemctl daemon-reload
+sudo systemctl enable imgedit
+sudo systemctl start imgedit
+sudo systemctl status imgedit --no-pager
 ```
 
-### 1.4 Configure Caddy
-
-Edit Caddyfile:
+### 1.5 Allow deploy user to restart only this service from CI
 
 ```bash
-sudo nano /etc/caddy/Caddyfile
+echo "YOUR_VPS_USER ALL=(root) NOPASSWD:/usr/bin/systemctl restart imgedit,/usr/bin/systemctl is-active imgedit" | sudo tee /etc/sudoers.d/imgedit-deploy
+sudo chmod 440 /etc/sudoers.d/imgedit-deploy
+sudo visudo -cf /etc/sudoers.d/imgedit-deploy
 ```
 
-Example site block:
+### 1.6 Configure Caddy as reverse proxy
+
+Edit `/etc/caddy/Caddyfile`:
 
 ```caddy
 imgedit.yourdomain.com {
-    root * /home/YOUR_VPS_USER/imgedit/current
     encode gzip zstd
-    file_server
-    try_files {path} /index.html
+    reverse_proxy 127.0.0.1:3000
 }
 ```
 
-Validate and reload:
+Apply config:
 
 ```bash
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-Point your DNS `A` record (`imgedit.yourdomain.com`) to your VPS IP.
+## 2) GitHub repository secrets (via gh CLI)
 
-## 2) GitHub CLI setup (connect repo to deployment)
-
-Run these commands from your repo root.
-
-### 2.1 Authenticate GitHub CLI
+### 2.1 Login
 
 ```bash
 gh auth login
 ```
 
-### 2.2 Find the exact SSH key you already use (recommended)
-
-If you can already SSH into VPS without password, detect the exact key path first:
-
-```bash
-ssh -vv YOUR_VPS_USER@YOUR_VPS_IP
-```
-
-Look for:
-
-- `Offering public key: /Users/.../.ssh/<keyname>`
-- `Server accepts key: /Users/.../.ssh/<keyname>`
-
-Use that exact private key file for `VPS_SSH_KEY`.
-
-Real example:
-
-- user: `debian`
-- host: `YOUR_VPS_IP_OR_HOSTNAME`
-- key: `~/.ssh/id_rsa`
-
-### 2.3 Add required Actions secrets
+### 2.2 Set VPS access secrets
 
 ```bash
 gh secret set VPS_HOST --body "YOUR_VPS_IP_OR_HOSTNAME"
@@ -105,56 +106,69 @@ gh secret set VPS_USER --body "YOUR_VPS_USER"
 gh secret set VPS_SSH_KEY < ~/.ssh/YOUR_KEY_FILE
 ```
 
-Notes:
-
-- `VPS_SSH_KEY` must be the private key matching the public key installed for `VPS_USER`.
-- Use an unencrypted key for CI (no passphrase), or create a dedicated deploy key without passphrase.
-- Example for your current VPS login:
-  - `gh secret set VPS_HOST --body "YOUR_VPS_IP_OR_HOSTNAME"`
-  - `gh secret set VPS_USER --body "debian"`
-  - `gh secret set VPS_SSH_KEY < ~/.ssh/id_rsa`
-
-### 2.4 Push to `master` to trigger deploy
+Tip to discover your key file:
 
 ```bash
-git add .github/workflows/deploy-caddy.yml docs/deploy-caddy-vps.md
-git commit -m "Add Caddy VPS CI/CD deployment workflow"
+ssh -vv YOUR_VPS_USER@YOUR_VPS_IP
+```
+
+Use the key shown in `Server accepts key: ...`.
+
+### 2.3 Set runtime env secrets used by server functions
+
+```bash
+gh secret set TRIGGER_SECRET_KEY
+gh secret set TRIGGER_PROJECT_REF
+gh secret set REPLICATE_API_TOKEN
+gh secret set R2_ACCOUNT_ID
+gh secret set R2_BUCKET
+gh secret set R2_ACCESS_KEY_ID
+gh secret set R2_SECRET_ACCESS_KEY
+gh secret set R2_PUBLIC_BASE_URL
+```
+
+`gh` will prompt for each value.
+
+## 3) CI/CD flow (automatic)
+
+On each push to `master`, workflow `.github/workflows/deploy-caddy.yml`:
+
+1. Builds app with `docker compose run --rm app ... pnpm build`.
+2. Verifies `.output/server/index.mjs` exists.
+3. Uploads `.output` to `/home/<user>/imgedit/releases/<release-id>`.
+4. Writes runtime env file to `/home/<user>/imgedit/shared/.env`.
+5. Switches `current` symlink to new release.
+6. Restarts `imgedit` service.
+7. Keeps latest 5 releases.
+
+No manual deploy commands are needed after setup.
+
+## 4) First deploy
+
+```bash
+git add .github/workflows/deploy-caddy.yml docs/deploy-caddy-vps.md README.md
+git commit -m "Deploy Nitro server to VPS via systemd and Caddy"
 git push origin master
 ```
 
-### 2.5 Watch workflow runs with GH CLI
+Watch run:
 
 ```bash
-gh run list --workflow "Deploy Static Site To Debian VPS (Caddy)"
+gh run list --workflow "Deploy TanStack Start To Debian VPS (Caddy + Node)"
 gh run watch
 ```
 
-## 3) How this deploy pipeline works
-
-1. On push to `master`, GitHub Actions starts.
-2. It builds production assets using project policy command style:
-   - `docker compose run --rm app ... pnpm build`
-3. It creates a release directory on VPS:
-   - `/home/YOUR_VPS_USER/imgedit/releases/<sha-run>`
-4. It uploads local `dist/` to that release via `rsync`.
-5. It atomically updates symlink:
-   - `/home/YOUR_VPS_USER/imgedit/current -> /home/YOUR_VPS_USER/imgedit/releases/<new-release>`
-6. It prunes old releases and keeps the latest 5.
-
-No container is used on VPS for serving static files. Caddy serves files directly.
-
-## 4) Rollback (manual)
-
-If needed:
+## 5) Rollback
 
 ```bash
 ssh YOUR_VPS_USER@YOUR_VPS_IP
 ls -1dt /home/YOUR_VPS_USER/imgedit/releases/*
 ln -sfn /home/YOUR_VPS_USER/imgedit/releases/PAST_RELEASE /home/YOUR_VPS_USER/imgedit/current
+sudo systemctl restart imgedit
 ```
 
-## 5) Troubleshooting
+## 6) Troubleshooting
 
-- If workflow cannot SSH: check `VPS_USER`, `VPS_HOST`, key pair, and `~/.ssh/authorized_keys` on VPS.
-- If app loads blank on deep routes: confirm Caddy has `try_files {path} /index.html`.
-- If deploy uploads but site does not update: verify Caddy root is exactly `/home/YOUR_VPS_USER/imgedit/current`.
+- `Permission denied` on restart: sudoers rule in step 1.5 is missing or wrong.
+- `502` from Caddy: check `sudo systemctl status imgedit` and `journalctl -u imgedit -n 200 --no-pager`.
+- Startup env errors: confirm all GitHub secrets are set and workflow step `Write runtime environment file on VPS` succeeded.

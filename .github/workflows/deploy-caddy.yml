@@ -1,4 +1,4 @@
-name: Deploy Static Site To Debian VPS (Caddy)
+name: Deploy TanStack Start To Debian VPS (Caddy + Node)
 
 on:
   push:
@@ -16,23 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build production assets with docker compose
+      - name: Build production server with docker compose
         run: |
           docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm build"
 
-      - name: Detect build output directory
+      - name: Verify Nitro output
         run: |
-          if [ -d dist ]; then
-            echo "BUILD_OUTPUT_DIR=dist" >> "$GITHUB_ENV"
-          elif [ -d .output/public ]; then
-            echo "BUILD_OUTPUT_DIR=.output/public" >> "$GITHUB_ENV"
-          else
-            echo "No supported build output directory found."
-            echo "Expected one of: dist, .output/public"
-            ls -la
-            ls -la .output || true
-            exit 1
-          fi
+          test -f .output/server/index.mjs
 
       - name: Prepare SSH key
         env:
@@ -57,16 +47,42 @@ jobs:
         run: |
           RELEASE_ID="${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "mkdir -p '$DEPLOY_PATH/releases/$RELEASE_ID'"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "mkdir -p '$DEPLOY_PATH/releases/$RELEASE_ID' '$DEPLOY_PATH/shared'"
 
-      - name: Upload build output to VPS release directory
+      - name: Upload Nitro output to VPS release directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          tar -C "$BUILD_OUTPUT_DIR" -cf - . | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "tar -xf - -C '$DEPLOY_PATH/releases/$RELEASE_ID'"
+          tar -cf - .output | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "tar -xf - -C '$DEPLOY_PATH/releases/$RELEASE_ID'"
 
-      - name: Activate new release and prune old releases
+      - name: Write runtime environment file on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          TRIGGER_SECRET_KEY: ${{ secrets.TRIGGER_SECRET_KEY }}
+          TRIGGER_PROJECT_REF: ${{ secrets.TRIGGER_PROJECT_REF }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          {
+            echo "TRIGGER_SECRET_KEY=$TRIGGER_SECRET_KEY"
+            echo "TRIGGER_PROJECT_REF=$TRIGGER_PROJECT_REF"
+            echo "REPLICATE_API_TOKEN=$REPLICATE_API_TOKEN"
+            echo "R2_ACCOUNT_ID=$R2_ACCOUNT_ID"
+            echo "R2_BUCKET=$R2_BUCKET"
+            echo "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID"
+            echo "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY"
+            echo "R2_PUBLIC_BASE_URL=$R2_PUBLIC_BASE_URL"
+          } > runtime.env
+          scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes runtime.env "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/shared/.env"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "chmod 600 '$DEPLOY_PATH/shared/.env'"
+
+      - name: Activate release and restart service
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -74,5 +90,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "
             set -eu
             ln -sfn '$DEPLOY_PATH/releases/$RELEASE_ID' '$DEPLOY_PATH/current'
-            ls -1dt '$DEPLOY_PATH'/releases/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+            sudo systemctl restart imgedit
+            sudo systemctl is-active --quiet imgedit
+            ls -1dt '$DEPLOY_PATH'/releases/* 2>/dev/null | tail -n +6 | xargs -r rm -rf || true
           "
