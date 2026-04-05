@@ -175,7 +175,9 @@ function App() {
         .map((value) => Number.parseInt(value, 10))
       const safeRatioWidth = Number.isFinite(ratioWidth) ? ratioWidth : 1
       const safeRatioHeight = Number.isFinite(ratioHeight) ? ratioHeight : 1
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200' viewBox='0 0 ${safeRatioWidth * 100} ${safeRatioHeight * 100}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`
+      const svgWidth = safeRatioWidth * 100
+      const svgHeight = safeRatioHeight * 100
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}' viewBox='0 0 ${svgWidth} ${svgHeight}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`
 
       return {
         id: `generated-${i + 1}`,
@@ -366,7 +368,7 @@ function App() {
 
         <Card className="bg-white/85 backdrop-blur">
           <CardContent className="p-4 md:p-5">
-            <div className="border border-border bg-muted p-2">
+            <div className="border border-border bg-muted">
               {selectedImage?.status === "loading" ? (
                 <div className="flex h-[52vh] w-full items-center justify-center bg-slate-100 sm:h-[68vh]">
                   <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-slate-700" />
