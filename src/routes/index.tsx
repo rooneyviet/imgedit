@@ -155,13 +155,12 @@ function App() {
       const payload = {
         prompt: prompt.trim() || "Edit this image with the reference subjects",
         count: safeCount,
-        resolution: "1 MP" as const,
-        aspectRatio: "3:4" as const,
+        goFast: true,
+        megapixels: "1" as const,
+        aspectRatio: "1:1" as const,
         inputImagesDataUrls: selectedImages,
         outputFormat: "jpg" as const,
-        outputQuality: 80,
-        safetyTolerance: 2,
-        promptUpsampling: false,
+        outputQuality: 95,
       }
 
       const response = await generateAiImagesServerFn({ data: payload })

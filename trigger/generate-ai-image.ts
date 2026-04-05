@@ -8,19 +8,18 @@ export type GenerateReplicateImagePayload = {
   inputImages: string[]
   inputImageObjectKeys?: string[]
   deleteInputImagesOnSuccess?: boolean
-  resolution?: "0.25 MP" | "0.5 MP" | "1 MP"
+  goFast?: boolean
+  megapixels?: "1"
   aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3"
   outputFormat?: "jpg" | "png" | "webp"
   outputQuality?: number
-  safetyTolerance?: number
-  promptUpsampling?: boolean
 }
 
 export type GenerateReplicateImageResult = {
   imageUrl: string
 }
 
-const MODEL = "black-forest-labs/flux-2-pro"
+const MODEL = "black-forest-labs/flux-2-klein-9b"
 export const GENERATE_REPLICATE_IMAGE_TASK_ID = "generate-replicate-image"
 
 function requireEnv(name: string): string {
@@ -115,14 +114,13 @@ export const generateReplicateImageTask = task({
     await replicate.predictions.create({
       model: MODEL,
       input: {
+        images: payload.inputImages,
         prompt: payload.prompt,
-        resolution: payload.resolution ?? "1 MP",
+        go_fast: payload.goFast ?? true,
+        megapixels: payload.megapixels ?? "1",
         aspect_ratio: payload.aspectRatio ?? "3:4",
-        input_images: payload.inputImages,
         output_format: payload.outputFormat ?? "jpg",
-        output_quality: payload.outputQuality ?? 80,
-        safety_tolerance: payload.safetyTolerance ?? 2,
-        prompt_upsampling: payload.promptUpsampling ?? false,
+        output_quality: payload.outputQuality ?? 95,
       },
       webhook: token.url,
       webhook_events_filter: ["completed"],

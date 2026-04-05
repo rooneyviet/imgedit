@@ -67,12 +67,11 @@ function toRequest(input: unknown): GenerateImagesRequest {
     prompt,
     inputImagesDataUrls,
     count: data.count,
-    resolution: data.resolution,
+    goFast: data.goFast,
+    megapixels: data.megapixels,
     aspectRatio: data.aspectRatio,
     outputFormat: data.outputFormat,
     outputQuality: data.outputQuality,
-    safetyTolerance: data.safetyTolerance,
-    promptUpsampling: data.promptUpsampling,
   }
 }
 
@@ -136,12 +135,11 @@ export const generateAiImages = createServerFn({ method: "POST" })
         inputImages: uploadedInputImages.inputImages,
         inputImageObjectKeys: uploadedInputImages.inputImageObjectKeys,
         deleteInputImagesOnSuccess: i === count - 1,
-        resolution: input.resolution,
+        goFast: input.goFast,
+        megapixels: input.megapixels,
         aspectRatio: input.aspectRatio,
         outputFormat: input.outputFormat,
         outputQuality: input.outputQuality,
-        safetyTolerance: input.safetyTolerance,
-        promptUpsampling: input.promptUpsampling,
       })
 
       const run = await runs.poll(handle.id, { pollIntervalMs: 1000 })
