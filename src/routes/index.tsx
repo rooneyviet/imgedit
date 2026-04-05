@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start"
 import { ImagePlus, Upload, X } from "lucide-react"
+import { useDropzone } from "react-dropzone"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/")({ component: App })
 
@@ -37,12 +39,85 @@ type SelectedImageSlot = {
   dataUrl: string
 }
 
+type InputImageSlotProps = {
+  index: number
+  slot: SelectedImageSlot | null
+  isGenerating: boolean
+  onPickImage: (index: number, file?: File) => Promise<void>
+  onRemoveImage: (index: number) => void
+}
+
 const MAX_SLOTS = 3
 const MAX_GENERATE_COUNT = 4
 const GENERATE_COUNT_OPTIONS = Array.from(
   { length: MAX_GENERATE_COUNT },
   (_, i) => i + 1
 )
+
+function InputImageSlot({
+  index,
+  slot,
+  isGenerating,
+  onPickImage,
+  onRemoveImage,
+}: InputImageSlotProps) {
+  const onDropAccepted = useCallback(
+    (files: File[]) => {
+      void onPickImage(index, files[0])
+    },
+    [index, onPickImage]
+  )
+
+  const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
+    accept: {
+      "image/*": [],
+    },
+    maxFiles: 1,
+    multiple: false,
+    noClick: true,
+    noKeyboard: true,
+    onDropAccepted,
+  })
+
+  return (
+    <div {...getRootProps({ className: "relative" })}>
+      <input {...getInputProps({ className: "hidden" })} />
+      <Button
+        type="button"
+        variant="outline"
+        onClick={open}
+        className={cn(
+          "relative aspect-square h-auto w-full overflow-hidden border-dashed p-0 transition-colors",
+          isDragActive && "border-primary/60 bg-accent/20"
+        )}
+      >
+        {slot ? (
+          <img
+            src={slot.previewUrl}
+            alt={`Selected ${index + 1}`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+            <ImagePlus size={16} />
+            <span className="text-[10px]">{index + 1}</span>
+          </span>
+        )}
+      </Button>
+
+      {slot && !isGenerating ? (
+        <button
+          type="button"
+          onClick={() => onRemoveImage(index)}
+          aria-label={`Remove image ${index + 1}`}
+          className="absolute top-0 right-0 z-10 inline-flex h-5 w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/10 bg-background/50 text-red-500 shadow-sm transition hover:bg-background"
+        >
+          <X size={12} />
+        </button>
+      ) : null}
+    </div>
+  )
+}
 
 function App() {
   const generateAiImagesServerFn = useServerFn(generateAiImages)
@@ -57,7 +132,6 @@ function App() {
     Array.from({ length: MAX_SLOTS }, () => null)
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const fileInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
   const selectedImages = useMemo(
     () => slots.flatMap((slot) => (slot ? [slot.dataUrl] : [])),
@@ -103,12 +177,7 @@ function App() {
     [generatedImages, selectedId]
   )
 
-  const openFilePicker = (index: number) => {
-    fileInputRefs.current[index]?.click()
-  }
-
-  const onPickImage = async (index: number, fileList: FileList | null) => {
-    const file = fileList?.[0]
+  const onPickImage = useCallback(async (index: number, file?: File) => {
     if (!file) return
 
     const dataUrl = await fileToDataUrl(file)
@@ -120,7 +189,7 @@ function App() {
       }
       return next
     })
-  }
+  }, [])
 
   const onRemoveImage = (index: number) => {
     setSlots((prev) => {
@@ -129,8 +198,6 @@ function App() {
       return next
     })
 
-    const input = fileInputRefs.current[index]
-    if (input) input.value = ""
   }
 
   const onGenerate = async () => {
@@ -201,50 +268,14 @@ function App() {
               </h2>
               <div className="mt-3 grid grid-cols-3 gap-3">
                 {slots.map((slot, index) => (
-                  <div key={`slot-${index + 1}`} className="relative">
-                    <input
-                      ref={(el) => {
-                        fileInputRefs.current[index] = el
-                      }}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        void onPickImage(index, e.target.files)
-                      }}
-                    />
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => openFilePicker(index)}
-                      className="relative aspect-square h-auto w-full overflow-hidden border-dashed p-0"
-                    >
-                      {slot ? (
-                        <img
-                          src={slot.previewUrl}
-                          alt={`Selected ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
-                          <ImagePlus size={16} />
-                          <span className="text-[10px]">{index + 1}</span>
-                        </span>
-                      )}
-                    </Button>
-
-                    {slot && !isGenerating ? (
-                      <button
-                        type="button"
-                        onClick={() => onRemoveImage(index)}
-                        aria-label={`Remove image ${index + 1}`}
-                        className="absolute top-0 right-0 z-10 inline-flex h-5 w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/10 bg-background/50 text-red-500 shadow-sm transition hover:bg-background"
-                      >
-                        <X size={12} />
-                      </button>
-                    ) : null}
-                  </div>
+                  <InputImageSlot
+                    key={`slot-${index + 1}`}
+                    index={index}
+                    slot={slot}
+                    isGenerating={isGenerating}
+                    onPickImage={onPickImage}
+                    onRemoveImage={onRemoveImage}
+                  />
                 ))}
               </div>
             </section>
