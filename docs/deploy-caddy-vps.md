@@ -43,12 +43,12 @@ Set these repository secrets (never commit real values):
 - `R2_SECRET_ACCESS_KEY`
 - `R2_PUBLIC_BASE_URL`
 
-`deploy-vps.yml` writes `/opt/imgedit/.env.production` on each deploy from these secrets automatically.
+`ci.yml` writes `$HOME/imgedit/.env.production` on each deploy from these secrets automatically.
 
 ## 4. Configure Caddy
 
 ```bash
-sudo cp /opt/imgedit/deploy/Caddyfile.example /etc/caddy/Caddyfile
+sudo cp "$HOME/imgedit/deploy/Caddyfile.example" /etc/caddy/Caddyfile
 ```
 
 Edit `/etc/caddy/Caddyfile` and replace `your-domain.com` with your real domain.
@@ -61,15 +61,7 @@ sudo systemctl enable caddy
 sudo systemctl restart caddy
 ```
 
-## 5. First manual deploy
-
-```bash
-cd /opt/imgedit
-chmod +x deploy/deploy.sh
-APP_DIR=/opt/imgedit BRANCH=master ./deploy/deploy.sh
-```
-
-## 6. GitHub Actions secrets
+## 5. GitHub Actions secrets
 
 Set these repository secrets:
 
@@ -78,17 +70,23 @@ Set these repository secrets:
 - `VPS_SSH_KEY`: private key for that user
 - `VPS_PORT`: usually `22`
 
-## 7. CI/CD behavior in this repo
+## 6. CI/CD behavior in this repo
 
 - `.github/workflows/ci.yml`
   - Runs on pull requests and pushes.
-  - Runs lint + typecheck + test + build using `docker compose run`.
-- `.github/workflows/deploy-vps.yml`
-  - Runs on push to `master`.
-  - Runs build gate, then SSH deploy to VPS.
-  - On server, executes `deploy/deploy.sh`:
-    - `git pull --ff-only`
-    - `docker compose -f docker-compose.prod.yml up -d --build`
+  - Runs typecheck + build using `docker compose run`.
+  - On push to `master`, deploy job runs after checks:
+    - bootstraps `$HOME/imgedit` on first deploy
+    - writes `$HOME/imgedit/.env.production` from GitHub Secrets
+    - runs `deploy/deploy.sh`
+      - `git pull --ff-only`
+      - `docker compose -f docker-compose.prod.yml up -d --build`
+
+## 7. Port used in production
+
+- App container listens on `3030`.
+- Host binding is `127.0.0.1:3030:3030` (not public).
+- Caddy proxies to `127.0.0.1:3030`.
 
 ## 8. Trigger.dev production note
 

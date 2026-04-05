@@ -15,12 +15,12 @@ RUN pnpm run build && pnpm prune --prod
 
 FROM base AS runner
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3030
 ENV HOST=0.0.0.0
 
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.output ./.output
 
-EXPOSE 3000
+EXPOSE 3030
 CMD ["node", ".output/server/index.mjs"]
