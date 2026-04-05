@@ -13,6 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -21,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { downloadAiImage } from "@/lib/server/download-ai-image"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
 import { upscaleAiImage } from "@/lib/server/upscale-ai-image"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -36,6 +43,11 @@ type GalleryItem = {
   status: "preview" | "loading" | "ready" | "error"
   src?: string
   isUpscaled?: boolean
+}
+
+type GeneratedSlot = {
+  generatedSrc: string | null
+  upscaledSrc: string | null
 }
 
 type SelectedImageSlot = {
@@ -140,16 +152,18 @@ function InputImageSlot({
 
 function App() {
   const isDev = import.meta.env.DEV
+  const downloadAiImageServerFn = useServerFn(downloadAiImage)
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const upscaleAiImageServerFn = useServerFn(upscaleAiImage)
   const [prompt, setPrompt] = useState("")
   const [generateCount, setGenerateCount] = useState(1)
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1")
   const [isMockEnabled, setIsMockEnabled] = useState(false)
-  const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
-  const [upscaledImages, setUpscaledImages] = useState<string[]>([])
+  const [generatedSlots, setGeneratedSlots] = useState<GeneratedSlot[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [isUpscaling, setIsUpscaling] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const [upscaleError, setUpscaleError] = useState<string | null>(null)
   const [slots, setSlots] = useState<Array<SelectedImageSlot | null>>(
@@ -166,21 +180,17 @@ function App() {
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
     if (generatedSlots.length > 0) {
-      const generated: GalleryItem[] = generatedSlots.map((src, i) => ({
-        id: `generated-${i + 1}`,
-        label: `Result ${i + 1}`,
-        status: src ? "ready" : "loading",
-        src: src ?? undefined,
-      }))
-      const upscaled = upscaledImages.map((src, i) => ({
-        id: `upscaled-${i + 1}`,
-        label: `Upscaled ${i + 1}`,
-        status: "ready" as const,
-        src,
-        isUpscaled: true,
-      }))
+      return generatedSlots.map((slot, i) => {
+        const src = slot.upscaledSrc ?? slot.generatedSrc ?? undefined
 
-      return [...generated, ...upscaled]
+        return {
+          id: `generated-${i + 1}`,
+          label: `Result ${i + 1}`,
+          status: src ? "ready" : "loading",
+          src,
+          isUpscaled: Boolean(slot.upscaledSrc),
+        }
+      })
     }
 
     const safeCount = Math.min(
@@ -205,7 +215,7 @@ function App() {
         status: "preview",
       }
     })
-  }, [aspectRatio, generateCount, generatedSlots, upscaledImages])
+  }, [aspectRatio, generateCount, generatedSlots])
 
   const selectedImage = useMemo(
     () =>
@@ -213,6 +223,20 @@ function App() {
       generatedImages[0],
     [generatedImages, selectedId]
   )
+  const selectedGeneratedSlot = useMemo(() => {
+    if (!selectedImage) return null
+
+    const selectedIndex = Number.parseInt(
+      selectedImage.id.replace("generated-", ""),
+      10
+    )
+    const slotIndex = selectedIndex - 1
+    if (!Number.isFinite(slotIndex) || slotIndex < 0) {
+      return null
+    }
+
+    return generatedSlots[slotIndex] ?? null
+  }, [generatedSlots, selectedImage])
   const selectedAspectRatio = useMemo(() => {
     const [width, height] = aspectRatio
       .split(":")
@@ -256,10 +280,15 @@ function App() {
     )
 
     setIsGenerating(true)
+    setDownloadError(null)
     setGenerateError(null)
     setUpscaleError(null)
-    setUpscaledImages([])
-    setGeneratedSlots(Array.from({ length: safeCount }, () => null))
+    setGeneratedSlots(
+      Array.from({ length: safeCount }, () => ({
+        generatedSrc: null,
+        upscaledSrc: null,
+      }))
+    )
     setSelectedId("generated-1")
 
     try {
@@ -288,7 +317,12 @@ function App() {
         return imageUrl
       })
 
-      setGeneratedSlots(generated)
+      setGeneratedSlots(
+        generated.map((imageUrl) => ({
+          generatedSrc: imageUrl,
+          upscaledSrc: null,
+        }))
+      )
       setSelectedId("generated-1")
     } catch (error) {
       const message =
@@ -309,6 +343,7 @@ function App() {
     }
 
     setIsUpscaling(true)
+    setDownloadError(null)
     setUpscaleError(null)
 
     try {
@@ -320,9 +355,26 @@ function App() {
         throw new Error("Upscale did not return an image")
       }
 
-      const nextIndex = upscaledImages.length + 1
-      setUpscaledImages((prev) => [...prev, image])
-      setSelectedId(`upscaled-${nextIndex}`)
+      const selectedIndex = Number.parseInt(
+        selectedImage.id.replace("generated-", ""),
+        10
+      )
+      const slotIndex = selectedIndex - 1
+      if (!Number.isFinite(slotIndex) || slotIndex < 0) {
+        throw new Error("Unable to determine generated image slot")
+      }
+
+      setGeneratedSlots((prev) =>
+        prev.map((slot, index) =>
+          index === slotIndex
+            ? {
+                ...slot,
+                upscaledSrc: image,
+              }
+            : slot
+        )
+      )
+      setSelectedId(selectedImage.id)
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image upscale failed"
@@ -331,6 +383,43 @@ function App() {
       setIsUpscaling(false)
     }
   }
+
+  const onDownloadImage = useCallback(
+    async (imageUrl: string, filename: string) => {
+      setIsDownloading(true)
+      setDownloadError(null)
+
+      try {
+        const response = await downloadAiImageServerFn({
+          data: { imageUrl },
+        })
+        const byteString = atob(response.base64)
+        const bytes = new Uint8Array(byteString.length)
+        for (let i = 0; i < byteString.length; i++) {
+          bytes[i] = byteString.charCodeAt(i)
+        }
+
+        const blob = new Blob([bytes], {
+          type: response.contentType || "application/octet-stream",
+        })
+        const blobUrl = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = blobUrl
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(blobUrl)
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Image download failed"
+        setDownloadError(message)
+      } finally {
+        setIsDownloading(false)
+      }
+    },
+    [downloadAiImageServerFn]
+  )
 
   return (
     <main className="min-h-svh bg-[linear-gradient(140deg,#f8fafc_0%,#fff7ed_45%,#f1f5f9_100%)] p-4 md:p-8">
@@ -446,7 +535,12 @@ function App() {
           <CardContent className="p-4 md:p-5">
             <div className="relative border border-border bg-muted">
               {selectedImage?.status === "ready" && selectedImage.src ? (
-                <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+                <div className="absolute right-1 z-10 flex items-center gap-2">
+                  {selectedImage.isUpscaled ? (
+                    <span className="rounded-md bg-amber-500 px-2 py-1 text-xs font-medium text-white">
+                      Upscaled
+                    </span>
+                  ) : null}
                   {!selectedImage.isUpscaled ? (
                     <Button
                       type="button"
@@ -457,16 +551,59 @@ function App() {
                       {isUpscaling ? "Upscaling..." : "Upscale"}
                     </Button>
                   ) : null}
-                  <Button asChild type="button" size="sm">
-                    <a
-                      href={selectedImage.src}
-                      download={`${selectedImage.id}.jpg`}
-                      aria-label={`Download ${selectedImage.label}`}
-                    >
-                      <Download size={14} />
-                      Download
-                    </a>
-                  </Button>
+                  {selectedGeneratedSlot?.generatedSrc ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" size="sm">
+                          <Download size={14} />
+                          Download
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-56 rounded-md border border-slate-200 bg-white text-slate-900 shadow-lg dark:bg-white dark:text-slate-900"
+                      >
+                        <DropdownMenuItem
+                          disabled={isDownloading}
+                          onSelect={(event) => {
+                            event.preventDefault()
+                            const generatedSrc =
+                              selectedGeneratedSlot.generatedSrc
+                            if (!generatedSrc) return
+                            void onDownloadImage(
+                              generatedSrc,
+                              `${selectedImage.id}-generated.jpg`
+                            )
+                          }}
+                          className="w-full px-3 py-2 text-sm focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900"
+                        >
+                          {isDownloading
+                            ? "Downloading..."
+                            : "Download Generated"}
+                        </DropdownMenuItem>
+                        {selectedGeneratedSlot.upscaledSrc ? (
+                          <DropdownMenuItem
+                            disabled={isDownloading}
+                            onSelect={(event) => {
+                              event.preventDefault()
+                              const upscaledSrc =
+                                selectedGeneratedSlot.upscaledSrc
+                              if (!upscaledSrc) return
+                              void onDownloadImage(
+                                upscaledSrc,
+                                `${selectedImage.id}-upscaled.jpg`
+                              )
+                            }}
+                            className="w-full px-3 py-2 text-sm focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900"
+                          >
+                            {isDownloading
+                              ? "Downloading..."
+                              : "Download Upscaled"}
+                          </DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -495,6 +632,9 @@ function App() {
             {upscaleError ? (
               <p className="mt-3 text-sm text-red-600">{upscaleError}</p>
             ) : null}
+            {downloadError ? (
+              <p className="mt-3 text-sm text-red-600">{downloadError}</p>
+            ) : null}
 
             <div className="mt-4 w-full border border-border bg-muted/40 p-3">
               <h2 className="text-sm font-medium text-slate-900">
@@ -512,19 +652,26 @@ function App() {
                       onClick={() => setSelectedId(item.id)}
                       className={`h-auto overflow-hidden p-0 ${active ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
                     >
-                      {item.status === "loading" ? (
-                        <Skeleton className="aspect-square w-full" />
-                      ) : item.src ? (
-                        <img
-                          src={item.src}
-                          alt={item.label}
-                          className="aspect-square w-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex aspect-square w-full items-center justify-center bg-slate-200 text-xs text-slate-500">
-                          {item.label}
-                        </span>
-                      )}
+                      <div className="relative w-full">
+                        {item.status === "loading" ? (
+                          <Skeleton className="aspect-square w-full" />
+                        ) : item.src ? (
+                          <img
+                            src={item.src}
+                            alt={item.label}
+                            className="aspect-square w-full object-cover"
+                          />
+                        ) : (
+                          <span className="flex aspect-square w-full items-center justify-center bg-slate-200 text-xs text-slate-500">
+                            {item.label}
+                          </span>
+                        )}
+                        {item.isUpscaled ? (
+                          <span className="absolute top-1 right-1 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                            Upscaled
+                          </span>
+                        ) : null}
+                      </div>
                     </Button>
                   )
                 })}
