@@ -1,0 +1,60 @@
+name: Deploy Static Site To Debian VPS (Caddy)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: /var/www/imgedit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production assets with docker compose
+        run: |
+          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm build"
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Trust VPS host key
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Create release on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          RELEASE_ID="${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          ssh "$VPS_USER@$VPS_HOST" "mkdir -p '$DEPLOY_PATH/releases/$RELEASE_ID'"
+
+      - name: Upload dist/ to VPS release directory
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          rsync -az --delete dist/ "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/releases/$RELEASE_ID/"
+
+      - name: Activate new release and prune old releases
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" "
+            set -eu
+            ln -sfn '$DEPLOY_PATH/releases/$RELEASE_ID' '$DEPLOY_PATH/current'
+            ls -1dt '$DEPLOY_PATH'/releases/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+          "

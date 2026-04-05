@@ -18,6 +18,12 @@ This is a template for a new TanStack Start project with React, TypeScript, and 
 3. In a second shell, run Trigger.dev dev worker:
    - `docker compose run --rm app sh -lc "corepack enable && pnpm run dev:trigger"`
 
+## Deployment (Debian VPS + Caddy + GitHub Actions)
+
+See step-by-step guide:
+
+- `docs/deploy-caddy-vps.md`
+
 ## Adding components
 
 To add components to your app, run the following command:
