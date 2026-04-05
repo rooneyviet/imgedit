@@ -6,6 +6,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ci-cd-master
+  cancel-in-progress: true
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -17,3 +21,51 @@ jobs:
       - name: Run typecheck and build in Docker Compose
         run: |
           docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run typecheck && pnpm run build"
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build gate in Docker Compose
+        run: |
+          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run build"
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          TRIGGER_SECRET_KEY: ${{ secrets.TRIGGER_SECRET_KEY }}
+          TRIGGER_PROJECT_REF: ${{ secrets.TRIGGER_PROJECT_REF }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          envs: TRIGGER_SECRET_KEY,TRIGGER_PROJECT_REF,REPLICATE_API_TOKEN,R2_ACCOUNT_ID,R2_BUCKET,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_PUBLIC_BASE_URL
+          script_stop: true
+          script: |
+            cat > /opt/imgedit/.env.production <<EOF
+            TRIGGER_SECRET_KEY=$TRIGGER_SECRET_KEY
+            TRIGGER_PROJECT_REF=$TRIGGER_PROJECT_REF
+            REPLICATE_API_TOKEN=$REPLICATE_API_TOKEN
+            R2_ACCOUNT_ID=$R2_ACCOUNT_ID
+            R2_BUCKET=$R2_BUCKET
+            R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID
+            R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY
+            R2_PUBLIC_BASE_URL=$R2_PUBLIC_BASE_URL
+            EOF
+
+            cd /opt/imgedit
+            chmod +x deploy/deploy.sh
+            APP_DIR=/opt/imgedit BRANCH=master ./deploy/deploy.sh
