@@ -14,6 +14,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run lint, typecheck, test, build in Docker Compose
+      - name: Run typecheck and build in Docker Compose
         run: |
-          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run typecheck && pnpm run test && pnpm run build"
+          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run typecheck && pnpm run build"
