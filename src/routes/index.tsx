@@ -52,7 +52,7 @@ type GeneratedSlot = {
 
 type SelectedImageSlot = {
   previewUrl: string
-  dataUrl: string
+  inputSource: string
 }
 
 type InputImageSlotProps = {
@@ -172,7 +172,7 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const selectedImages = useMemo(
-    () => slots.flatMap((slot) => (slot ? [slot.dataUrl] : [])),
+    () => slots.flatMap((slot) => (slot ? [slot.inputSource] : [])),
     [slots]
   )
   const isGenerateDisabled =
@@ -254,11 +254,28 @@ function App() {
       const next = [...prev]
       next[index] = {
         previewUrl: dataUrl,
-        dataUrl,
+        inputSource: dataUrl,
       }
       return next
     })
   }, [])
+
+  const onUseGeneratedImageAsInput = useCallback(
+    (index: number) => {
+      const generatedSrc = selectedGeneratedSlot?.generatedSrc
+      if (!generatedSrc) return
+
+      setSlots((prev) => {
+        const next = [...prev]
+        next[index] = {
+          previewUrl: generatedSrc,
+          inputSource: generatedSrc,
+        }
+        return next
+      })
+    },
+    [selectedGeneratedSlot]
+  )
 
   const onRemoveImage = (index: number) => {
     setSlots((prev) => {
@@ -299,7 +316,7 @@ function App() {
         goFast: true,
         megapixels: "1" as const,
         aspectRatio,
-        inputImagesDataUrls: selectedImages,
+        inputImagesDataUrlsOrUrls: selectedImages,
         outputFormat: "jpg" as const,
         outputQuality: 95,
       }
@@ -550,6 +567,32 @@ function App() {
                     >
                       {isUpscaling ? "Upscaling..." : "Upscale"}
                     </Button>
+                  ) : null}
+                  {selectedGeneratedSlot?.generatedSrc ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" size="sm">
+                          Use this as input image
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-56 rounded-md border border-slate-200 bg-white text-slate-900 shadow-lg dark:bg-white dark:text-slate-900"
+                      >
+                        {Array.from({ length: MAX_SLOTS }, (_, index) => (
+                          <DropdownMenuItem
+                            key={`use-as-input-${index + 1}`}
+                            disabled={isGenerating}
+                            onSelect={() => {
+                              onUseGeneratedImageAsInput(index)
+                            }}
+                            className="w-full px-3 py-2 text-sm focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900"
+                          >
+                            Input Image {index + 1}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : null}
                   {selectedGeneratedSlot?.generatedSrc ? (
                     <DropdownMenu>

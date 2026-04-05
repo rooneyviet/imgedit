@@ -16,7 +16,7 @@ type GenerateImagesRequest = Omit<
 > & {
   count?: number
   mock?: boolean
-  inputImagesDataUrls: string[]
+  inputImagesDataUrlsOrUrls: string[]
 }
 
 type GenerateImagesResponse = {
@@ -25,7 +25,7 @@ type GenerateImagesResponse = {
 
 const MAX_GENERATED_IMAGES = 8
 const MOCK_IMAGE_URL =
-  "https://replicate.delivery/xezq/sZO04iaee3iy7EN9RxpTJhoQUq2fgdxlyJR3Eb1qIG1WkCwsA/out.jpg"
+  "https://replicate.delivery/xezq/zaOfqr5zXKVEUCLKy1cmunmnR6jYSfgTE0xDjd8wq6k36CYWA/tmpbnnkh81q.webp"
 const MOCK_DELAY_MS = 3000
 
 function getErrorMessage(error: unknown): string {
@@ -51,26 +51,31 @@ function toRequest(input: unknown): GenerateImagesRequest {
     throw new Error("Invalid request payload")
   }
 
-  const data = input as Partial<GenerateImagesRequest>
+  const data = input as Partial<GenerateImagesRequest> & {
+    inputImagesDataUrls?: string[]
+  }
   const prompt = (data.prompt ?? "").trim()
-  const inputImagesDataUrls = Array.isArray(data.inputImagesDataUrls)
-    ? data.inputImagesDataUrls.filter(
-        (value): value is string =>
-          typeof value === "string" && value.trim().length > 0
-      )
-    : []
+  const rawInputImages = Array.isArray(data.inputImagesDataUrlsOrUrls)
+    ? data.inputImagesDataUrlsOrUrls
+    : Array.isArray(data.inputImagesDataUrls)
+      ? data.inputImagesDataUrls
+      : []
+  const inputImagesDataUrlsOrUrls = rawInputImages.filter(
+    (value): value is string =>
+      typeof value === "string" && value.trim().length > 0
+  )
 
   if (!prompt) {
     throw new Error("Prompt is required")
   }
 
-  if (inputImagesDataUrls.length === 0) {
-    throw new Error("At least one uploaded image is required")
+  if (inputImagesDataUrlsOrUrls.length === 0) {
+    throw new Error("At least one input image is required")
   }
 
   return {
     prompt,
-    inputImagesDataUrls,
+    inputImagesDataUrlsOrUrls,
     count: data.count,
     mock: data.mock === true,
     goFast: data.goFast,
@@ -114,6 +119,10 @@ function extractUploadedInputImages(
   }
 }
 
+function isPublicHttpImageUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim())
+}
+
 export const generateAiImages = createServerFn({ method: "POST" })
   .inputValidator((input: GenerateImagesRequest) => input)
   .handler(async ({ data }): Promise<GenerateImagesResponse> => {
@@ -132,28 +141,52 @@ export const generateAiImages = createServerFn({ method: "POST" })
     }
 
     const images: string[] = []
-    const uploadHandle = await tasks.trigger(
-      UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID,
-      {
-        inputImagesDataUrls: input.inputImagesDataUrls,
-        outputFormat: "webp",
-        outputQuality: 82,
-        maxWidth: 1536,
-        maxHeight: 1536,
+    const directInputImages: string[] = []
+    const uploadableInputImagesDataUrls: string[] = []
+    for (const inputImage of input.inputImagesDataUrlsOrUrls) {
+      if (isPublicHttpImageUrl(inputImage)) {
+        directInputImages.push(inputImage)
+      } else {
+        uploadableInputImagesDataUrls.push(inputImage)
       }
-    )
-
-    const uploadRun = await runs.poll(uploadHandle.id, { pollIntervalMs: 1000 })
-    if (!uploadRun.isSuccess) {
-      throw new Error(getErrorMessage(uploadRun.error))
     }
 
-    const uploadedInputImages = extractUploadedInputImages(uploadRun.output)
+    let uploadedInputImages: UploadInputImagesToR2Result = {
+      inputImages: [],
+      inputImageObjectKeys: [],
+    }
+
+    if (uploadableInputImagesDataUrls.length > 0) {
+      const uploadHandle = await tasks.trigger(
+        UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID,
+        {
+          inputImagesDataUrls: uploadableInputImagesDataUrls,
+          outputFormat: "webp",
+          outputQuality: 82,
+          maxWidth: 1536,
+          maxHeight: 1536,
+        }
+      )
+
+      const uploadRun = await runs.poll(uploadHandle.id, {
+        pollIntervalMs: 1000,
+      })
+      if (!uploadRun.isSuccess) {
+        throw new Error(getErrorMessage(uploadRun.error))
+      }
+
+      uploadedInputImages = extractUploadedInputImages(uploadRun.output)
+    }
+
+    const inputImages = [
+      ...directInputImages,
+      ...uploadedInputImages.inputImages,
+    ]
 
     for (let i = 0; i < count; i++) {
       const handle = await tasks.trigger(GENERATE_REPLICATE_IMAGE_TASK_ID, {
         prompt: input.prompt,
-        inputImages: uploadedInputImages.inputImages,
+        inputImages,
         inputImageObjectKeys: uploadedInputImages.inputImageObjectKeys,
         deleteInputImagesOnSuccess: i === count - 1,
         goFast: input.goFast,
