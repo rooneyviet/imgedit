@@ -15,6 +15,7 @@ type GenerateImagesRequest = Omit<
   "inputImages" | "inputImageObjectKeys" | "deleteInputImagesOnSuccess"
 > & {
   count?: number
+  mock?: boolean
   inputImagesDataUrls: string[]
 }
 
@@ -23,6 +24,8 @@ type GenerateImagesResponse = {
 }
 
 const MAX_GENERATED_IMAGES = 8
+const MOCK_IMAGE_URL = "https://placehold.co/1024x1024/png?text=Mock+Image"
+const MOCK_DELAY_MS = 3000
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
@@ -67,6 +70,7 @@ function toRequest(input: unknown): GenerateImagesRequest {
     prompt,
     inputImagesDataUrls,
     count: data.count,
+    mock: data.mock === true,
     goFast: data.goFast,
     megapixels: data.megapixels,
     aspectRatio: data.aspectRatio,
@@ -113,6 +117,14 @@ export const generateAiImages = createServerFn({ method: "POST" })
 
     const input = toRequest(data)
     const count = Math.min(Math.max(input.count ?? 1, 1), MAX_GENERATED_IMAGES)
+
+    if (process.env.NODE_ENV === "development" && input.mock) {
+      await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+      return {
+        images: Array.from({ length: count }, () => MOCK_IMAGE_URL),
+      }
+    }
+
     const images: string[] = []
     const uploadHandle = await tasks.trigger(UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID, {
       inputImagesDataUrls: input.inputImagesDataUrls,

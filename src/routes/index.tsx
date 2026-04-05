@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start"
-import { ImagePlus, Upload, X } from "lucide-react"
+import { Download, ImagePlus, Upload, X } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import type { GenerateReplicateImagePayload } from "../../trigger/generate-ai-image"
@@ -135,10 +137,12 @@ function InputImageSlot({
 }
 
 function App() {
+  const isDev = import.meta.env.DEV
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
   const [generateCount, setGenerateCount] = useState(1)
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1")
+  const [isMockEnabled, setIsMockEnabled] = useState(false)
   const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -186,7 +190,7 @@ function App() {
         status: "preview",
       }
     })
-  }, [aspectRatio, generateCount, generatedSlots, prompt])
+  }, [aspectRatio, generateCount, generatedSlots])
 
   const selectedImage = useMemo(
     () =>
@@ -194,6 +198,14 @@ function App() {
       generatedImages[0],
     [generatedImages, selectedId]
   )
+  const selectedAspectRatio = useMemo(() => {
+    const [width, height] = aspectRatio
+      .split(":")
+      .map((value) => Number.parseInt(value, 10))
+    const safeWidth = Number.isFinite(width) && width > 0 ? width : 1
+    const safeHeight = Number.isFinite(height) && height > 0 ? height : 1
+    return safeWidth / safeHeight
+  }, [aspectRatio])
 
   const onPickImage = useCallback(async (index: number, file?: File) => {
     if (!file) return
@@ -237,6 +249,7 @@ function App() {
       const payload = {
         prompt: prompt.trim() || "Edit this image with the reference subjects",
         count: safeCount,
+        mock: isDev && isMockEnabled,
         goFast: true,
         megapixels: "1" as const,
         aspectRatio,
@@ -349,6 +362,19 @@ function App() {
                 </Select>
               </div>
 
+              {isDev ? (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="mock-mode"
+                    checked={isMockEnabled}
+                    onCheckedChange={(checked) =>
+                      setIsMockEnabled(checked === true)
+                    }
+                  />
+                  <Label htmlFor="mock-mode">Mock</Label>
+                </div>
+              ) : null}
+
               <Button
                 type="button"
                 onClick={onGenerate}
@@ -368,10 +394,33 @@ function App() {
 
         <Card className="bg-white/85 backdrop-blur">
           <CardContent className="p-4 md:p-5">
-            <div className="border border-border bg-muted">
+            <div className="relative border border-border bg-muted">
+              {selectedImage?.status === "ready" && selectedImage.src ? (
+                <Button
+                  asChild
+                  type="button"
+                  size="sm"
+                  className="absolute top-2 right-2 z-10"
+                >
+                  <a
+                    href={selectedImage.src}
+                    download={`${selectedImage.id}.jpg`}
+                    aria-label={`Download ${selectedImage.label}`}
+                  >
+                    <Download size={14} />
+                    Download
+                  </a>
+                </Button>
+              ) : null}
+
               {selectedImage?.status === "loading" ? (
-                <div className="flex h-[52vh] w-full items-center justify-center bg-slate-100 sm:h-[68vh]">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-slate-700" />
+                <div className="flex h-[52vh] w-full items-center justify-center sm:h-[68vh]">
+                  <div
+                    className="h-full max-w-full"
+                    style={{ aspectRatio: selectedAspectRatio }}
+                  >
+                    <Skeleton className="h-full w-full bg-slate-300/90" />
+                  </div>
                 </div>
               ) : selectedImage?.src ? (
                 <img
@@ -386,7 +435,7 @@ function App() {
               )}
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4 w-full border border-border bg-muted/40 p-3">
               <h2 className="text-sm font-medium text-slate-900">
                 Generated Images
               </h2>
@@ -403,9 +452,7 @@ function App() {
                       className={`h-auto overflow-hidden p-0 ${active ? "border-amber-500 ring-2 ring-amber-200" : ""}`}
                     >
                       {item.status === "loading" ? (
-                        <span className="flex aspect-square w-full items-center justify-center bg-slate-100">
-                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                        </span>
+                        <Skeleton className="aspect-square w-full" />
                       ) : item.src ? (
                         <img
                           src={item.src}
