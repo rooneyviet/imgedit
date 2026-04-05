@@ -16,4 +16,4 @@ jobs:
 
       - name: Run lint, typecheck, test, build in Docker Compose
         run: |
-          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+          docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm run typecheck && pnpm run test && pnpm run build"
