@@ -24,7 +24,8 @@ type GenerateImagesResponse = {
 }
 
 const MAX_GENERATED_IMAGES = 8
-const MOCK_IMAGE_URL = "https://placehold.co/1024x1024/png?text=Mock+Image"
+const MOCK_IMAGE_URL =
+  "https://replicate.delivery/xezq/sZO04iaee3iy7EN9RxpTJhoQUq2fgdxlyJR3Eb1qIG1WkCwsA/out.jpg"
 const MOCK_DELAY_MS = 3000
 
 function getErrorMessage(error: unknown): string {
@@ -54,7 +55,8 @@ function toRequest(input: unknown): GenerateImagesRequest {
   const prompt = (data.prompt ?? "").trim()
   const inputImagesDataUrls = Array.isArray(data.inputImagesDataUrls)
     ? data.inputImagesDataUrls.filter(
-        (value): value is string => typeof value === "string" && value.trim().length > 0
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0
       )
     : []
 
@@ -79,7 +81,9 @@ function toRequest(input: unknown): GenerateImagesRequest {
   }
 }
 
-function extractUploadedInputImages(output: unknown): UploadInputImagesToR2Result {
+function extractUploadedInputImages(
+  output: unknown
+): UploadInputImagesToR2Result {
   if (!output || typeof output !== "object") {
     throw new Error("Missing uploaded image output")
   }
@@ -90,7 +94,9 @@ function extractUploadedInputImages(output: unknown): UploadInputImagesToR2Resul
   }
 
   const inputImages = Array.isArray(value.inputImages)
-    ? value.inputImages.filter((item): item is string => typeof item === "string" && item.length > 0)
+    ? value.inputImages.filter(
+        (item): item is string => typeof item === "string" && item.length > 0
+      )
     : []
   const inputImageObjectKeys = Array.isArray(value.inputImageObjectKeys)
     ? value.inputImageObjectKeys.filter(
@@ -126,13 +132,16 @@ export const generateAiImages = createServerFn({ method: "POST" })
     }
 
     const images: string[] = []
-    const uploadHandle = await tasks.trigger(UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID, {
-      inputImagesDataUrls: input.inputImagesDataUrls,
-      outputFormat: "webp",
-      outputQuality: 82,
-      maxWidth: 1536,
-      maxHeight: 1536,
-    })
+    const uploadHandle = await tasks.trigger(
+      UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID,
+      {
+        inputImagesDataUrls: input.inputImagesDataUrls,
+        outputFormat: "webp",
+        outputQuality: 82,
+        maxWidth: 1536,
+        maxHeight: 1536,
+      }
+    )
 
     const uploadRun = await runs.poll(uploadHandle.id, { pollIntervalMs: 1000 })
     if (!uploadRun.isSuccess) {

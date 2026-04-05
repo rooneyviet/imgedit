@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { generateAiImages } from "@/lib/server/generate-ai-images"
+import { upscaleAiImage } from "@/lib/server/upscale-ai-image"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -34,6 +35,7 @@ type GalleryItem = {
   label: string
   status: "preview" | "loading" | "ready" | "error"
   src?: string
+  isUpscaled?: boolean
 }
 
 type SelectedImageSlot = {
@@ -139,13 +141,17 @@ function InputImageSlot({
 function App() {
   const isDev = import.meta.env.DEV
   const generateAiImagesServerFn = useServerFn(generateAiImages)
+  const upscaleAiImageServerFn = useServerFn(upscaleAiImage)
   const [prompt, setPrompt] = useState("")
   const [generateCount, setGenerateCount] = useState(1)
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1")
   const [isMockEnabled, setIsMockEnabled] = useState(false)
   const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
+  const [upscaledImages, setUpscaledImages] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isUpscaling, setIsUpscaling] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const [upscaleError, setUpscaleError] = useState<string | null>(null)
   const [slots, setSlots] = useState<Array<SelectedImageSlot | null>>(
     Array.from({ length: MAX_SLOTS }, () => null)
   )
@@ -160,12 +166,21 @@ function App() {
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
     if (generatedSlots.length > 0) {
-      return generatedSlots.map((src, i) => ({
+      const generated: GalleryItem[] = generatedSlots.map((src, i) => ({
         id: `generated-${i + 1}`,
         label: `Result ${i + 1}`,
         status: src ? "ready" : "loading",
         src: src ?? undefined,
       }))
+      const upscaled = upscaledImages.map((src, i) => ({
+        id: `upscaled-${i + 1}`,
+        label: `Upscaled ${i + 1}`,
+        status: "ready" as const,
+        src,
+        isUpscaled: true,
+      }))
+
+      return [...generated, ...upscaled]
     }
 
     const safeCount = Math.min(
@@ -190,7 +205,7 @@ function App() {
         status: "preview",
       }
     })
-  }, [aspectRatio, generateCount, generatedSlots])
+  }, [aspectRatio, generateCount, generatedSlots, upscaledImages])
 
   const selectedImage = useMemo(
     () =>
@@ -242,6 +257,8 @@ function App() {
 
     setIsGenerating(true)
     setGenerateError(null)
+    setUpscaleError(null)
+    setUpscaledImages([])
     setGeneratedSlots(Array.from({ length: safeCount }, () => null))
     setSelectedId("generated-1")
 
@@ -279,6 +296,39 @@ function App() {
       setGenerateError(message)
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const onUpscale = async () => {
+    if (
+      !selectedImage?.src ||
+      selectedImage.status !== "ready" ||
+      selectedImage.isUpscaled
+    ) {
+      return
+    }
+
+    setIsUpscaling(true)
+    setUpscaleError(null)
+
+    try {
+      const response = await upscaleAiImageServerFn({
+        data: { image: selectedImage.src },
+      })
+      const image = response.image?.trim()
+      if (!image) {
+        throw new Error("Upscale did not return an image")
+      }
+
+      const nextIndex = upscaledImages.length + 1
+      setUpscaledImages((prev) => [...prev, image])
+      setSelectedId(`upscaled-${nextIndex}`)
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Image upscale failed"
+      setUpscaleError(message)
+    } finally {
+      setIsUpscaling(false)
     }
   }
 
@@ -396,21 +446,28 @@ function App() {
           <CardContent className="p-4 md:p-5">
             <div className="relative border border-border bg-muted">
               {selectedImage?.status === "ready" && selectedImage.src ? (
-                <Button
-                  asChild
-                  type="button"
-                  size="sm"
-                  className="absolute top-2 right-2 z-10"
-                >
-                  <a
-                    href={selectedImage.src}
-                    download={`${selectedImage.id}.jpg`}
-                    aria-label={`Download ${selectedImage.label}`}
-                  >
-                    <Download size={14} />
-                    Download
-                  </a>
-                </Button>
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+                  {!selectedImage.isUpscaled ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={onUpscale}
+                      disabled={isUpscaling || isGenerating}
+                    >
+                      {isUpscaling ? "Upscaling..." : "Upscale"}
+                    </Button>
+                  ) : null}
+                  <Button asChild type="button" size="sm">
+                    <a
+                      href={selectedImage.src}
+                      download={`${selectedImage.id}.jpg`}
+                      aria-label={`Download ${selectedImage.label}`}
+                    >
+                      <Download size={14} />
+                      Download
+                    </a>
+                  </Button>
+                </div>
               ) : null}
 
               {selectedImage?.status === "loading" ? (
@@ -434,6 +491,10 @@ function App() {
                 </div>
               )}
             </div>
+
+            {upscaleError ? (
+              <p className="mt-3 text-sm text-red-600">{upscaleError}</p>
+            ) : null}
 
             <div className="mt-4 w-full border border-border bg-muted/40 p-3">
               <h2 className="text-sm font-medium text-slate-900">
