@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -24,6 +23,7 @@ import {
 import { generateAiImages } from "@/lib/server/generate-ai-images"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import type { GenerateReplicateImagePayload } from "../../trigger/generate-ai-image"
 
 export const Route = createFileRoute("/")({ component: App })
 
@@ -47,12 +47,27 @@ type InputImageSlotProps = {
   onRemoveImage: (index: number) => void
 }
 
+type AspectRatio = NonNullable<GenerateReplicateImagePayload["aspectRatio"]>
+
 const MAX_SLOTS = 3
 const MAX_GENERATE_COUNT = 4
 const GENERATE_COUNT_OPTIONS = Array.from(
   { length: MAX_GENERATE_COUNT },
   (_, i) => i + 1
 )
+const ASPECT_RATIO_OPTIONS: AspectRatio[] = [
+  "1:1",
+  "16:9",
+  "9:16",
+  "2:3",
+  "3:2",
+  "3:4",
+  "4:3",
+  "5:4",
+  "4:5",
+  "21:9",
+  "9:21",
+]
 
 function InputImageSlot({
   index,
@@ -123,8 +138,7 @@ function App() {
   const generateAiImagesServerFn = useServerFn(generateAiImages)
   const [prompt, setPrompt] = useState("")
   const [generateCount, setGenerateCount] = useState(1)
-  const [width, setWidth] = useState(1024)
-  const [height, setHeight] = useState(1024)
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1")
   const [generatedSlots, setGeneratedSlots] = useState<Array<string | null>>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
@@ -156,10 +170,12 @@ function App() {
     )
 
     return Array.from({ length: safeCount }, (_, i) => {
-      const safeWidth = Math.min(Math.max(width || 1024, 128), 4096)
-      const safeHeight = Math.min(Math.max(height || 1024, 128), 4096)
-      const text = prompt.trim() || "IMG Edit Preview"
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${safeWidth}' height='${safeHeight}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><text x='50%' y='45%' text-anchor='middle' fill='#f8fafc' font-family='monospace' font-size='34'>${escapeSvg(text)}</text><text x='50%' y='57%' text-anchor='middle' fill='#e2e8f0' font-family='monospace' font-size='22'>${safeWidth} x ${safeHeight} • #${i + 1}</text></svg>`
+      const [ratioWidth, ratioHeight] = aspectRatio
+        .split(":")
+        .map((value) => Number.parseInt(value, 10))
+      const safeRatioWidth = Number.isFinite(ratioWidth) ? ratioWidth : 1
+      const safeRatioHeight = Number.isFinite(ratioHeight) ? ratioHeight : 1
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200' viewBox='0 0 ${safeRatioWidth * 100} ${safeRatioHeight * 100}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`
 
       return {
         id: `generated-${i + 1}`,
@@ -168,7 +184,7 @@ function App() {
         status: "preview",
       }
     })
-  }, [generateCount, generatedSlots, height, prompt, width])
+  }, [aspectRatio, generateCount, generatedSlots, prompt])
 
   const selectedImage = useMemo(
     () =>
@@ -197,7 +213,6 @@ function App() {
       next[index] = null
       return next
     })
-
   }
 
   const onGenerate = async () => {
@@ -222,7 +237,7 @@ function App() {
         count: safeCount,
         goFast: true,
         megapixels: "1" as const,
-        aspectRatio: "1:1" as const,
+        aspectRatio,
         inputImagesDataUrls: selectedImages,
         outputFormat: "jpg" as const,
         outputQuality: 95,
@@ -254,7 +269,7 @@ function App() {
 
   return (
     <main className="min-h-svh bg-[linear-gradient(140deg,#f8fafc_0%,#fff7ed_45%,#f1f5f9_100%)] p-4 md:p-8">
-      <div className="mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-4 md:gap-6 lg:grid-cols-[340px_1fr]">
+      <div className="mx-auto grid w-full max-w-450 grid-cols-1 gap-4 md:gap-6 lg:grid-cols-[340px_1fr]">
         <Card className="bg-white/85 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-2xl tracking-tight">IMG Edit</CardTitle>
@@ -311,29 +326,25 @@ function App() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="width">Width</Label>
-                  <Input
-                    id="width"
-                    type="number"
-                    min={128}
-                    max={4096}
-                    value={width}
-                    onChange={(e) => setWidth(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="height">Height</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    min={128}
-                    max={4096}
-                    value={height}
-                    onChange={(e) => setHeight(Number(e.target.value))}
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="aspect-ratio">Aspect Ratio</Label>
+                <Select
+                  value={aspectRatio}
+                  onValueChange={(value) =>
+                    setAspectRatio(value as AspectRatio)
+                  }
+                >
+                  <SelectTrigger id="aspect-ratio">
+                    <SelectValue placeholder="Select aspect ratio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ASPECT_RATIO_OPTIONS.map((ratio) => (
+                      <SelectItem key={ratio} value={ratio}>
+                        {ratio}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button
@@ -414,15 +425,6 @@ function App() {
       </div>
     </main>
   )
-}
-
-function escapeSvg(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;")
 }
 
 function fileToDataUrl(file: File): Promise<string> {

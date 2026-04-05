@@ -10,7 +10,18 @@ export type GenerateReplicateImagePayload = {
   deleteInputImagesOnSuccess?: boolean
   goFast?: boolean
   megapixels?: "1"
-  aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3"
+  aspectRatio?:
+    | "1:1"
+    | "16:9"
+    | "9:16"
+    | "2:3"
+    | "3:2"
+    | "3:4"
+    | "4:3"
+    | "5:4"
+    | "4:5"
+    | "21:9"
+    | "9:21"
   outputFormat?: "jpg" | "png" | "webp"
   outputQuality?: number
 }
