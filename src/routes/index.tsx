@@ -64,9 +64,7 @@ function App() {
     [slots]
   )
   const isGenerateDisabled =
-    isGenerating ||
-    selectedImages.length === 0 ||
-    prompt.trim().length === 0
+    isGenerating || selectedImages.length === 0 || prompt.trim().length === 0
 
   const generatedImages = useMemo<GalleryItem[]>(() => {
     if (generatedSlots.length > 0) {
@@ -189,17 +187,17 @@ function App() {
 
   return (
     <main className="min-h-svh bg-[linear-gradient(140deg,#f8fafc_0%,#fff7ed_45%,#f1f5f9_100%)] p-4 md:p-8">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 md:gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-4 md:gap-6 lg:grid-cols-[340px_1fr]">
         <Card className="bg-white/85 backdrop-blur">
           <CardHeader>
             <CardTitle className="text-2xl tracking-tight">IMG Edit</CardTitle>
-            <CardDescription>Trigger.dev + Replicate workflow</CardDescription>
+            <CardDescription>Edit your images</CardDescription>
           </CardHeader>
 
           <CardContent>
             <section>
               <h2 className="text-sm font-medium text-slate-900">
-                Image Placeholders
+                Input Images
               </h2>
               <div className="mt-3 grid grid-cols-3 gap-3">
                 {slots.map((slot, index) => (
@@ -258,17 +256,9 @@ function App() {
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe style or edit direction"
-                  rows={4}
+                  placeholder="Enter your prompt here. Please be specific about the edits you want to see on the input image(s). For example: 'Make the image look like it was taken during sunset, with warm tones and long shadows.'"
+                  rows={6}
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Input images</Label>
-                <p className="rounded border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-                  {selectedImages.length} image
-                  {selectedImages.length === 1 ? "" : "s"} selected
-                </p>
               </div>
 
               <div className="space-y-1.5">
@@ -336,17 +326,17 @@ function App() {
           <CardContent className="p-4 md:p-5">
             <div className="border border-border bg-muted p-2">
               {selectedImage?.status === "loading" ? (
-                <div className="flex h-[44vh] w-full items-center justify-center bg-slate-100 sm:h-[56vh]">
+                <div className="flex h-[52vh] w-full items-center justify-center bg-slate-100 sm:h-[68vh]">
                   <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-slate-700" />
                 </div>
               ) : selectedImage?.src ? (
                 <img
                   src={selectedImage.src}
                   alt={selectedImage.label}
-                  className="h-[44vh] w-full object-contain sm:h-[56vh]"
+                  className="h-[52vh] w-full object-contain sm:h-[68vh]"
                 />
               ) : (
-                <div className="flex h-[44vh] w-full items-center justify-center bg-slate-200 text-sm text-slate-500 sm:h-[56vh]">
+                <div className="flex h-[52vh] w-full items-center justify-center bg-slate-200 text-sm text-slate-500 sm:h-[68vh]">
                   No image selected
                 </div>
               )}
