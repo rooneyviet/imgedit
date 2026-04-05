@@ -20,10 +20,19 @@ jobs:
         run: |
           docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm build"
 
-      - name: Install rsync on runner
+      - name: Detect build output directory
         run: |
-          sudo apt-get update
-          sudo apt-get install -y rsync
+          if [ -d dist ]; then
+            echo "BUILD_OUTPUT_DIR=dist" >> "$GITHUB_ENV"
+          elif [ -d .output/public ]; then
+            echo "BUILD_OUTPUT_DIR=.output/public" >> "$GITHUB_ENV"
+          else
+            echo "No supported build output directory found."
+            echo "Expected one of: dist, .output/public"
+            ls -la
+            ls -la .output || true
+            exit 1
+          fi
 
       - name: Prepare SSH key
         env:
@@ -50,12 +59,12 @@ jobs:
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "mkdir -p '$DEPLOY_PATH/releases/$RELEASE_ID'"
 
-      - name: Upload dist/ to VPS release directory
+      - name: Upload build output to VPS release directory
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" dist/ "$VPS_USER@$VPS_HOST:$DEPLOY_PATH/releases/$RELEASE_ID/"
+          tar -C "$BUILD_OUTPUT_DIR" -cf - . | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" "tar -xf - -C '$DEPLOY_PATH/releases/$RELEASE_ID'"
 
       - name: Activate new release and prune old releases
         env:
