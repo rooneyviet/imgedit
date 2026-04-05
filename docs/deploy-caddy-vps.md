@@ -108,6 +108,7 @@ gh secret set VPS_SSH_KEY < ~/.ssh/YOUR_KEY_FILE
 Notes:
 
 - `VPS_SSH_KEY` must be the private key matching the public key installed for `VPS_USER`.
+- Use an unencrypted key for CI (no passphrase), or create a dedicated deploy key without passphrase.
 - Example for your current VPS login:
   - `gh secret set VPS_HOST --body "YOUR_VPS_IP_OR_HOSTNAME"`
   - `gh secret set VPS_USER --body "debian"`
