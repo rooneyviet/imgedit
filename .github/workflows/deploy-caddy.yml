@@ -20,6 +20,11 @@ jobs:
         run: |
           docker compose run --rm app sh -lc "corepack enable && pnpm install --frozen-lockfile && pnpm build"
 
+      - name: Install rsync on runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
+
       - name: Start SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
