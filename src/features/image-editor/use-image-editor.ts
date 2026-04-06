@@ -51,6 +51,8 @@ export type ImageEditorHelpers = {
 type UseImageEditorOptions = {
   isDev: boolean
   services: ImageEditorServices
+  canGenerate?: () => boolean
+  onGenerateUnauthorized?: () => void
   helpers?: Partial<ImageEditorHelpers>
 }
 
@@ -234,6 +236,8 @@ export async function executeDownloadFlow({
 export function useImageEditor({
   isDev,
   services,
+  canGenerate,
+  onGenerateUnauthorized,
   helpers,
 }: UseImageEditorOptions): ImageEditorController {
   const resolvedFileToDataUrl = helpers?.fileToDataUrl ?? fileToDataUrl
@@ -359,6 +363,12 @@ export function useImageEditor({
   }, [])
 
   const onGenerate = useCallback(async () => {
+    if (canGenerate && !canGenerate()) {
+      setGenerateError("Please sign in to continue")
+      onGenerateUnauthorized?.()
+      return
+    }
+
     if (selectedImages.length === 0) {
       setGenerateError("Please select at least one input image")
       return
@@ -389,6 +399,11 @@ export function useImageEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image generation failed"
+      if (message === "Please sign in to continue") {
+        setGeneratedSlots([])
+        setSelectedId(null)
+        onGenerateUnauthorized?.()
+      }
       setGenerateError(message)
     } finally {
       setIsGenerating(false)
@@ -398,6 +413,8 @@ export function useImageEditor({
     generateCount,
     isDev,
     isMockEnabled,
+    canGenerate,
+    onGenerateUnauthorized,
     prompt,
     selectedImages,
     services,

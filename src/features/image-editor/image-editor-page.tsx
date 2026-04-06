@@ -8,9 +8,20 @@ import { Button } from "@/components/ui/button"
 
 type ImageEditorPageProps = {
   controller: ImageEditorController
+  auth: {
+    isAuthenticated: boolean
+    isLoadingSession: boolean
+    userDisplayName: string | null
+    userEmail: string | null
+    onLogout: () => Promise<void>
+    onOpenLogin: () => void
+  }
 }
 
-export function ImageEditorPage({ controller }: ImageEditorPageProps) {
+export function ImageEditorPage({ controller, auth }: ImageEditorPageProps) {
+  const userLabel =
+    auth.userDisplayName || auth.userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
+
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card px-4 sm:px-6">
@@ -38,9 +49,34 @@ export function ImageEditorPage({ controller }: ImageEditorPageProps) {
           <Button type="button" size="icon" variant="ghost" aria-label="Help">
             <CircleHelp size={16} />
           </Button>
-          <div className="grid h-8 w-8 place-items-center border border-border bg-muted text-[10px] font-semibold tracking-wide">
-            A7
-          </div>
+          {auth.isAuthenticated ? (
+            <>
+              <div className="hidden border border-border bg-muted px-2 py-1 text-[10px] font-semibold tracking-wide uppercase md:block">
+                {userLabel}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="pointer-events-auto h-8 px-2 font-mono text-[10px] tracking-wider uppercase"
+                onClick={() => {
+                  void auth.onLogout()
+                }}
+              >
+                LOGOUT
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              className="h-8 px-2 font-mono text-[10px] tracking-wider uppercase"
+              onClick={auth.onOpenLogin}
+            >
+              {auth.isLoadingSession ? "AUTH_CHECK" : "SIGN_IN"}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -63,7 +99,7 @@ export function ImageEditorPage({ controller }: ImageEditorPageProps) {
           <span className="hidden md:inline">CPU: 12%</span>
         </div>
         <div className="flex items-center gap-3 text-zinc-300">
-          <span>USER: ADMIN_77</span>
+          <span>USER: {userLabel.toUpperCase()}</span>
           <Database size={10} />
         </div>
       </footer>

@@ -9,15 +9,7 @@ services:
       - supabase-db-data:/var/lib/postgresql/data
       - supabase-db-config:/etc/postgresql-custom
     healthcheck:
-      test:
-        [
-          "CMD",
-          "pg_isready",
-          "-U",
-          "postgres",
-          "-h",
-          "localhost"
-        ]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -37,7 +29,7 @@ services:
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
         "-c",
-        "log_min_messages=fatal"
+        "log_min_messages=fatal",
       ]
 
   supabase-meta:
@@ -73,7 +65,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:9999/health"
+          "http://localhost:9999/health",
         ]
       timeout: 5s
       interval: 5s
@@ -124,7 +116,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "fetch('http://localhost:3000/api/platform/profile').then((r)=>{if(r.status!==200) throw new Error(r.status)})"
+          "fetch('http://localhost:3000/api/platform/profile').then((r)=>{if(r.status!==200) throw new Error(r.status)})",
         ]
       timeout: 10s
       interval: 10s
@@ -164,6 +156,9 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
       DIRECT_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
+      SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
+      VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
     command: >
       sh -c "corepack enable &&
              pnpm install &&

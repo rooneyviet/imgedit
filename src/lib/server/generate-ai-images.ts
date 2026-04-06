@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start"
 import { runs, tasks } from "@trigger.dev/sdk"
 
+import { requireAuthenticatedUser } from "./auth"
 import {
   GENERATE_REPLICATE_IMAGE_TASK_ID,
   type GenerateReplicateImagePayload,
@@ -22,6 +23,7 @@ type GenerateImagesRequest = Omit<
   count?: number
   mock?: boolean
   inputImagesDataUrlsOrUrls: string[]
+  accessToken: string
 }
 
 type GenerateImagesResponse = {
@@ -81,6 +83,7 @@ function toRequest(input: unknown): GenerateImagesRequest {
   return {
     prompt,
     inputImagesDataUrlsOrUrls,
+    accessToken: (data.accessToken ?? "").trim(),
     count: data.count,
     mock: data.mock === true,
     goFast: data.goFast,
@@ -136,6 +139,7 @@ export const generateAiImages = createServerFn({ method: "POST" })
     }
 
     const input = toRequest(data)
+    await requireAuthenticatedUser(input.accessToken)
     const count = Math.min(Math.max(input.count ?? 1, 1), MAX_GENERATED_IMAGES)
 
     if (process.env.NODE_ENV === "development" && input.mock) {

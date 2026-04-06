@@ -5,8 +5,11 @@
  */
 import { createServerFn } from "@tanstack/react-start"
 
+import { requireAuthenticatedUser } from "./auth"
+
 type DownloadAiImageRequest = {
   imageUrl: string
+  accessToken: string
 }
 
 type DownloadAiImageResponse = {
@@ -21,18 +24,23 @@ function toRequest(input: unknown): DownloadAiImageRequest {
 
   const data = input as Partial<DownloadAiImageRequest>
   const imageUrl = (data.imageUrl ?? "").trim()
+  const accessToken = (data.accessToken ?? "").trim()
 
   if (!imageUrl) {
     throw new Error("Image URL is required")
   }
+  if (!accessToken) {
+    throw new Error("Access token is required")
+  }
 
-  return { imageUrl }
+  return { imageUrl, accessToken }
 }
 
 export const downloadAiImage = createServerFn({ method: "POST" })
   .inputValidator((input: DownloadAiImageRequest) => input)
   .handler(async ({ data }): Promise<DownloadAiImageResponse> => {
     const input = toRequest(data)
+    await requireAuthenticatedUser(input.accessToken)
     const response = await fetch(input.imageUrl)
 
     if (!response.ok) {
