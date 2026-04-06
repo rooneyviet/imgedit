@@ -1,12 +1,169 @@
 services:
+  supabase-db:
+    container_name: supabase-db
+    image: supabase/postgres:15.8.1.085
+    restart: unless-stopped
+    ports:
+      - "${SUPABASE_DB_PORT:-54322}:5432"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      - supabase-db-config:/etc/postgresql-custom
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "postgres",
+          "-h",
+          "localhost"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${SUPABASE_DB_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-postgres}
+      PGDATABASE: ${SUPABASE_DB_NAME:-postgres}
+      POSTGRES_DB: ${SUPABASE_DB_NAME:-postgres}
+      JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
+      JWT_EXP: ${SUPABASE_JWT_EXPIRY:-3600}
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "log_min_messages=fatal"
+      ]
+
+  supabase-meta:
+    container_name: supabase-meta
+    image: supabase/postgres-meta:v0.95.2
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: supabase-db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: ${SUPABASE_DB_NAME:-postgres}
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${SUPABASE_DB_PASSWORD:-postgres}
+      CRYPTO_KEY: ${SUPABASE_PG_META_CRYPTO_KEY:-replace-with-a-32-char-min-secret}
+
+  supabase-auth:
+    container_name: supabase-auth
+    image: supabase/gotrue:v2.186.0
+    restart: unless-stopped
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    ports:
+      - "${SUPABASE_AUTH_PORT:-9999}:9999"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9999/health"
+        ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_admin:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
+      GOTRUE_SITE_URL: ${SUPABASE_SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${SUPABASE_ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: ${SUPABASE_DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${SUPABASE_JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${SUPABASE_ENABLE_EMAIL_SIGNUP:-true}
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${SUPABASE_ENABLE_ANON_USERS:-false}
+      GOTRUE_MAILER_AUTOCONFIRM: ${SUPABASE_ENABLE_EMAIL_AUTOCONFIRM:-true}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SUPABASE_SMTP_ADMIN_EMAIL:-admin@example.com}
+      GOTRUE_SMTP_HOST: ${SUPABASE_SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${SUPABASE_SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SUPABASE_SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SUPABASE_SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: ${SUPABASE_SMTP_SENDER_NAME:-}
+      GOTRUE_MAILER_URLPATHS_INVITE: ${SUPABASE_MAILER_URLPATHS_INVITE:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${SUPABASE_MAILER_URLPATHS_CONFIRMATION:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_RECOVERY: ${SUPABASE_MAILER_URLPATHS_RECOVERY:-/auth/v1/verify}
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${SUPABASE_MAILER_URLPATHS_EMAIL_CHANGE:-/auth/v1/verify}
+
+  supabase-studio:
+    container_name: supabase-studio
+    image: supabase/studio:2026.03.16-sha-5528817
+    platform: linux/amd64
+    restart: unless-stopped
+    depends_on:
+      supabase-meta:
+        condition: service_started
+      supabase-auth:
+        condition: service_healthy
+    ports:
+      - "${SUPABASE_STUDIO_PORT:-54323}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/platform/profile').then((r)=>{if(r.status!==200) throw new Error(r.status)})"
+        ]
+      timeout: 10s
+      interval: 10s
+      retries: 10
+    environment:
+      HOSTNAME: "::"
+      STUDIO_PG_META_URL: http://supabase-meta:8080
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: supabase-db
+      POSTGRES_USER: supabase_admin
+      POSTGRES_DB: ${SUPABASE_DB_NAME:-postgres}
+      POSTGRES_PASSWORD: ${SUPABASE_DB_PASSWORD:-postgres}
+      PG_META_CRYPTO_KEY: ${SUPABASE_PG_META_CRYPTO_KEY:-replace-with-a-32-char-min-secret}
+      PGRST_DB_SCHEMAS: ${SUPABASE_PGRST_DB_SCHEMAS:-public}
+      PGRST_DB_MAX_ROWS: ${SUPABASE_PGRST_DB_MAX_ROWS:-1000}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${SUPABASE_PGRST_DB_EXTRA_SEARCH_PATH:-public}
+      DEFAULT_ORGANIZATION_NAME: ${SUPABASE_STUDIO_DEFAULT_ORGANIZATION:-Local}
+      DEFAULT_PROJECT_NAME: ${SUPABASE_STUDIO_DEFAULT_PROJECT:-imgedit}
+      SUPABASE_URL: ${SUPABASE_URL:-http://supabase-auth:9999}
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:9999}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
+      NEXT_PUBLIC_ENABLE_LOGS: false
+
   app:
     image: node:22-alpine
     working_dir: /app
+    depends_on:
+      supabase-db:
+        condition: service_healthy
     ports:
       - "3000:3000"
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+    environment:
+      DATABASE_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
+      DIRECT_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
     command: >
       sh -c "corepack enable &&
              pnpm install &&
@@ -14,3 +171,5 @@ services:
 
 volumes:
   node_modules:
+  supabase-db-data:
+  supabase-db-config:

@@ -55,6 +55,7 @@
     "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "prisma": "^7.6.0",
     "trigger.dev": "^4.4.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
