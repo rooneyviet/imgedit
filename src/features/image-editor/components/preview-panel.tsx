@@ -1,4 +1,4 @@
-import { Download } from "lucide-react"
+import { Download, ImageUpscale } from "lucide-react"
 
 import { MAX_SLOTS } from "../helpers"
 import type { ImageEditorController } from "../use-image-editor"
@@ -43,6 +43,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   onClick={controller.onUpscale}
                   disabled={controller.isUpscaling || controller.isGenerating}
                 >
+                  <ImageUpscale size={14} />
                   {controller.isUpscaling ? "Upscaling..." : "Upscale"}
                 </Button>
               ) : null}
