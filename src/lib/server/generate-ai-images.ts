@@ -1,3 +1,8 @@
+/**
+ * Validates generation input, uploads non-URL source images, and returns generated image URLs.
+ * @param {GenerateImagesRequest} data - Prompt, options, and input image data URLs or public URLs.
+ * @returns {Promise<GenerateImagesResponse>} Generated image URLs.
+ */
 import { createServerFn } from "@tanstack/react-start"
 import { runs, tasks } from "@trigger.dev/sdk"
 

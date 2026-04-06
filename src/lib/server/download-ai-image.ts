@@ -1,3 +1,8 @@
+/**
+ * Downloads a remote image and converts it to a base64 payload.
+ * @param {DownloadAiImageRequest} data - Request payload with the source `imageUrl`.
+ * @returns {Promise<DownloadAiImageResponse>} Base64 image content and detected content type.
+ */
 import { createServerFn } from "@tanstack/react-start"
 
 type DownloadAiImageRequest = {
