@@ -44,7 +44,6 @@ function App() {
     if (lastSyncedTokenRef.current === accessToken) {
       return
     }
-    lastSyncedTokenRef.current = accessToken
 
     void syncUserProfileServerFn({
       data: {
@@ -52,12 +51,17 @@ function App() {
       },
     })
       .then((result) => {
+        lastSyncedTokenRef.current = accessToken
         setSyncedProfile(result.profile)
       })
-      .catch(() => {
+      .catch((error) => {
+        lastSyncedTokenRef.current = null
+        if (isDev) {
+          console.warn("Failed to sync user profile", error)
+        }
         setSyncedProfile(null)
       })
-  }, [auth.accessToken, syncUserProfileServerFn])
+  }, [auth.accessToken, isDev, syncUserProfileServerFn])
 
   useEffect(() => {
     if (auth.isAuthenticated) {

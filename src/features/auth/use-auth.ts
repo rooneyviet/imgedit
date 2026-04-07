@@ -108,21 +108,30 @@ export function useAuth() {
       setIsSubmitting(true)
       setError(null)
 
-      const { data, error: signInError } = await client.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
+      try {
+        const { data, error: signInError } = await client.signInWithPassword({
+          email: email.trim(),
+          password,
+        })
 
-      setIsSubmitting(false)
+        if (signInError) {
+          setError(signInError.message)
+          return false
+        }
 
-      if (signInError) {
-        setError(signInError.message)
+        setSession(data.session ?? null)
+        setUser(data.user ?? data.session?.user ?? null)
+        return Boolean(data.session)
+      } catch (unknownError) {
+        setError(
+          unknownError instanceof Error
+            ? unknownError.message
+            : "Unexpected error while signing in"
+        )
         return false
+      } finally {
+        setIsSubmitting(false)
       }
-
-      setSession(data.session ?? null)
-      setUser(data.user ?? data.session?.user ?? null)
-      return Boolean(data.session)
     },
     [client]
   )
@@ -141,33 +150,42 @@ export function useAuth() {
       setIsSubmitting(true)
       setError(null)
 
-      const { data, error: signUpError } = await client.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            display_name: displayName.trim(),
+      try {
+        const { data, error: signUpError } = await client.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              display_name: displayName.trim(),
+            },
           },
-        },
-      })
+        })
 
-      if (signUpError) {
-        setIsSubmitting(false)
-        setError(signUpError.message)
+        if (signUpError) {
+          setError(signUpError.message)
+          return false
+        }
+
+        // Keep verification-required flow consistent even if local auth is auto-confirming.
+        if (data.session) {
+          await client.signOut()
+        }
+
+        setSession(null)
+        setUser(null)
+        setVerificationEmail(email.trim())
+        setMode("login")
+        return true
+      } catch (unknownError) {
+        setError(
+          unknownError instanceof Error
+            ? unknownError.message
+            : "Unexpected error while creating account"
+        )
         return false
+      } finally {
+        setIsSubmitting(false)
       }
-
-      // Keep verification-required flow consistent even if local auth is auto-confirming.
-      if (data.session) {
-        await client.signOut()
-      }
-
-      setSession(null)
-      setUser(null)
-      setVerificationEmail(email.trim())
-      setMode("login")
-      setIsSubmitting(false)
-      return true
     },
     [client]
   )
