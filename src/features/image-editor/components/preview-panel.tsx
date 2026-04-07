@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from "react"
 import {
   Download,
   Expand,
-  Eye,
   History,
   ImageUpscale,
+  LoaderCircle,
   ZoomIn,
   ZoomOut,
 } from "lucide-react"
-import {
-  TransformComponent,
-  TransformWrapper,
-} from "react-zoom-pan-pinch"
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
 
 import { MAX_SLOTS } from "../helpers"
 import type { ImageEditorController } from "../use-image-editor"
@@ -62,16 +59,13 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
     fullscreenZoomRef.current?.resetTransform(0)
   }, [isFullscreenOpen, selectedImage.src])
 
-  const canZoomImage = Boolean(selectedImage.src) && selectedImage.status !== "loading"
+  const canZoomImage =
+    Boolean(selectedImage.src) && selectedImage.status !== "loading"
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-12 items-center justify-between border-b border-border/60 bg-card px-4 sm:px-6">
         <div className="hidden items-center gap-6 font-mono text-[10px] font-bold tracking-wider text-muted-foreground md:flex">
-          <div className="flex items-center gap-2">
-            <span className="text-primary">PREVIEW_MODE:</span>
-            <span className="text-foreground">SINGLE_ENTITY</span>
-          </div>
           <div className="flex items-center gap-2">
             <span className="text-primary">ZOOM:</span>
             <span className="text-foreground">{previewZoomPercent}%</span>
@@ -79,7 +73,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
         </div>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          {!selectedImage.isUpscaled && selectedImage.status === "ready" ? (
+          {selectedImage.status === "ready" && !selectedImage.isUpscaled ? (
             <Button
               type="button"
               size="sm"
@@ -91,6 +85,12 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
               <ImageUpscale size={14} />
               {controller.isUpscaling ? "UPSCALING..." : "UPSCALE"}
             </Button>
+          ) : null}
+
+          {selectedImage.status === "ready" && selectedImage.isUpscaled ? (
+            <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white uppercase">
+              UPSCALED
+            </span>
           ) : null}
 
           {selectedGeneratedSlot?.generatedSrc ? (
@@ -256,7 +256,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   <img
                     src={selectedImage.src}
                     alt={selectedImage.label}
-                    className="h-full w-full select-none object-contain"
+                    className="h-full w-full object-contain select-none"
                     draggable={false}
                   />
                 </TransformComponent>
@@ -266,19 +266,6 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 NO IMAGE SELECTED
               </div>
             )}
-
-            {selectedImage.src ? (
-              <>
-                <div className="absolute top-4 left-4 border border-white/15 bg-zinc-900/80 px-3 py-2 font-mono text-[10px] tracking-widest text-zinc-100 uppercase backdrop-blur">
-                  Metadata: 1024x1024 / sRGB / v2.4
-                </div>
-                {selectedImage.isUpscaled ? (
-                  <span className="absolute top-4 right-4 bg-amber-500 px-2 py-1 font-mono text-[10px] font-semibold tracking-wider text-white uppercase">
-                    UPSCALED
-                  </span>
-                ) : null}
-              </>
-            ) : null}
           </div>
         </div>
       </div>
@@ -286,9 +273,11 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
       <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
         <DialogContent
           showCloseButton={false}
-          className="!top-0 !left-0 !h-screen !w-screen !max-w-none !translate-x-0 !translate-y-0 gap-0 border-0 bg-black p-0 text-white ring-0"
+          className="top-0! left-0! h-screen! w-screen! max-w-none! translate-x-0! translate-y-0! gap-0 border-0 bg-black p-0 text-white ring-0"
         >
-          <DialogTitle className="sr-only">Fullscreen image preview</DialogTitle>
+          <DialogTitle className="sr-only">
+            Fullscreen image preview
+          </DialogTitle>
 
           <div className="flex h-12 items-center justify-between border-b border-white/15 px-4">
             <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase">
@@ -351,7 +340,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   <img
                     src={selectedImage.src}
                     alt={selectedImage.label}
-                    className="max-h-full max-w-full select-none object-contain"
+                    className="max-h-full max-w-full object-contain select-none"
                     draggable={false}
                   />
                 </TransformComponent>
@@ -392,7 +381,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
           </Button>
         </div>
 
-        <div className="flex h-[110px] gap-3 overflow-x-auto pb-2">
+        <div className="flex h-27.5 gap-3 overflow-x-auto pb-2">
           {controller.generatedImages.map((item) => {
             const active = selectedImage.id === item.id
 
@@ -402,19 +391,17 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 type="button"
                 variant="outline"
                 onClick={() => controller.onSelectGeneratedImage(item.id)}
-                className={`group relative h-full w-[110px] shrink-0 overflow-hidden rounded-none p-0 ${
+                className={`group relative h-full w-27.5 shrink-0 overflow-hidden rounded-none p-0 ${
                   active
                     ? "border-primary ring-2 ring-primary/30"
                     : "border-border/60"
                 }`}
               >
-                {item.status === "loading" ? (
-                  <Skeleton className="h-full w-full" />
-                ) : item.src ? (
+                {item.src ? (
                   <img
                     src={item.src}
                     alt={item.label}
-                    className="h-full w-full object-cover grayscale transition-all group-hover:grayscale-0"
+                    className="h-full w-full object-cover transition-all group-hover:grayscale-0"
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center bg-muted font-mono text-[10px] text-muted-foreground">
@@ -422,9 +409,9 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   </span>
                 )}
 
-                {!active && item.src ? (
-                  <span className="absolute inset-0 grid place-items-center bg-black/0 text-white opacity-0 transition-all group-hover:bg-black/35 group-hover:opacity-100">
-                    <Eye size={15} />
+                {item.status === "loading" ? (
+                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-background/70 text-muted-foreground">
+                    <LoaderCircle size={16} className="animate-spin" />
                   </span>
                 ) : null}
 
