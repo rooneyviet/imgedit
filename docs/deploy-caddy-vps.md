@@ -42,6 +42,12 @@ Set these repository secrets (never commit real values):
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_PUBLIC_BASE_URL`
+- `DATABASE_URL`
+- `DIRECT_URL` (optional)
+- `SUPABASE_JWT_SECRET`
+- `SUPABASE_AUTH_EXTERNAL_URL`
+- `SUPABASE_AUTH_INTERNAL_URL` (optional)
+- `VITE_SUPABASE_AUTH_URL`
 
 `ci.yml` writes `$HOME/imgedit/.env.production` on each deploy from these secrets automatically.
 

@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_AUTH_URL: ${VITE_SUPABASE_AUTH_URL:-}
     image: imgedit:latest
     restart: unless-stopped
     env_file:
