@@ -12,6 +12,8 @@ describe("image editor controller flows", () => {
     const generateImages = vi.fn(() =>
       Promise.resolve({
         images: ["https://img.test/one.jpg"],
+        chargedCredits: 3,
+        remainingCredits: 7,
       })
     )
 
@@ -43,6 +45,7 @@ describe("image editor controller flows", () => {
       generatedSrc: "https://img.test/one.jpg",
       upscaledSrc: null,
     })
+    expect(result.remainingCredits).toBe(7)
   })
 
   it("onGenerate failure surfaces generation error", async () => {
@@ -67,6 +70,8 @@ describe("image editor controller flows", () => {
     const upscaleImage = vi.fn(() =>
       Promise.resolve({
         image: "https://img.test/two-upscaled.jpg",
+        chargedCredits: 2,
+        remainingCredits: 5,
       })
     )
 
@@ -100,6 +105,7 @@ describe("image editor controller flows", () => {
       generatedSrc: "https://img.test/two.jpg",
       upscaledSrc: "https://img.test/two-upscaled.jpg",
     })
+    expect(result.remainingCredits).toBe(5)
   })
 
   it("use generated as input writes expected slot", () => {

@@ -22,3 +22,33 @@ export * from './enums.ts';
  * 
  */
 export type Profile = Prisma.ProfileModel
+/**
+ * Model CreditAccount
+ * 
+ */
+export type CreditAccount = Prisma.CreditAccountModel
+/**
+ * Model CreditTransaction
+ * 
+ */
+export type CreditTransaction = Prisma.CreditTransactionModel
+/**
+ * Model CreditPricingRule
+ * 
+ */
+export type CreditPricingRule = Prisma.CreditPricingRuleModel
+/**
+ * Model BillingPlan
+ * 
+ */
+export type BillingPlan = Prisma.BillingPlanModel
+/**
+ * Model BillingSubscription
+ * 
+ */
+export type BillingSubscription = Prisma.BillingSubscriptionModel
+/**
+ * Model BillingPaymentEvent
+ * 
+ */
+export type BillingPaymentEvent = Prisma.BillingPaymentEventModel

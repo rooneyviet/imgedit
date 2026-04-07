@@ -1,9 +1,6 @@
 import { Terminal, WandSparkles } from "lucide-react"
 
-import {
-  ASPECT_RATIO_OPTIONS,
-  GENERATE_COUNT_OPTIONS,
-} from "../helpers"
+import { ASPECT_RATIO_OPTIONS, GENERATE_COUNT_OPTIONS } from "../helpers"
 import { InputImageSlot } from "./input-image-slot"
 import type { ImageEditorController } from "../use-image-editor"
 
@@ -77,14 +74,23 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           </Label>
           <Select
             value={String(controller.generateCount)}
-            onValueChange={(value) => controller.onGenerateCountChange(Number(value))}
+            onValueChange={(value) =>
+              controller.onGenerateCountChange(Number(value))
+            }
           >
-            <SelectTrigger id="count" className="h-10 bg-secondary/60 font-mono text-xs">
+            <SelectTrigger
+              id="count"
+              className="h-10 bg-secondary/60 font-mono text-xs"
+            >
               <SelectValue placeholder="Select count" />
             </SelectTrigger>
             <SelectContent>
               {GENERATE_COUNT_OPTIONS.map((count) => (
-                <SelectItem key={count} value={String(count)} className="font-mono text-xs">
+                <SelectItem
+                  key={count}
+                  value={String(count)}
+                  className="font-mono text-xs"
+                >
                   {count}
                 </SelectItem>
               ))}
@@ -102,7 +108,9 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
                 key={ratio}
                 type="button"
                 variant={isQuickRatioActive(ratio) ? "default" : "secondary"}
-                onClick={() => controller.onAspectRatioChange(ratio as AspectRatioOption)}
+                onClick={() =>
+                  controller.onAspectRatioChange(ratio as AspectRatioOption)
+                }
                 className="h-8 font-mono text-[10px] tracking-wider"
               >
                 {ratio}
@@ -124,7 +132,11 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
             </SelectTrigger>
             <SelectContent>
               {ASPECT_RATIO_OPTIONS.map((ratio) => (
-                <SelectItem key={ratio} value={ratio} className="font-mono text-xs">
+                <SelectItem
+                  key={ratio}
+                  value={ratio}
+                  className="font-mono text-xs"
+                >
                   {ratio}
                 </SelectItem>
               ))}
@@ -137,7 +149,9 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
             <Checkbox
               id="mock-mode"
               checked={controller.isMockEnabled}
-              onCheckedChange={(checked) => controller.onMockModeChange(checked === true)}
+              onCheckedChange={(checked) =>
+                controller.onMockModeChange(checked === true)
+              }
             />
             <Label
               htmlFor="mock-mode"
@@ -157,15 +171,26 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           className={`h-12 w-full gap-2 font-mono text-xs font-bold tracking-[0.2em] uppercase ${
             controller.isGenerateDisabled
               ? "border border-border bg-zinc-200 text-zinc-500 shadow-none hover:opacity-100"
-              : "bg-gradient-to-br from-primary to-fuchsia-500 text-primary-foreground hover:opacity-90"
+              : "bg-linear-to-br from-primary to-fuchsia-500 text-primary-foreground hover:opacity-90"
           }`}
         >
-          {controller.isGenerating ? "GENERATING..." : "GENERATE"}
+          {controller.isGenerating ? (
+            "GENERATING..."
+          ) : (
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-base">GENERATE</span>
+              <span className="text-[9px] font-medium tracking-normal normal-case">
+                {controller.estimatedGenerateCredits} credits
+              </span>
+            </span>
+          )}
           <WandSparkles size={16} />
         </Button>
 
         {controller.generateError ? (
-          <p className="mt-3 text-xs text-destructive">{controller.generateError}</p>
+          <p className="mt-3 text-xs text-destructive">
+            {controller.generateError}
+          </p>
         ) : null}
       </div>
     </div>

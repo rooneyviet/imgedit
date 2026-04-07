@@ -182,6 +182,9 @@ export type ProfileWhereInput = {
   displayName?: Prisma.StringNullableFilter<"Profile"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Profile"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Profile"> | Date | string
+  creditAccount?: Prisma.XOR<Prisma.CreditAccountNullableScalarRelationFilter, Prisma.CreditAccountWhereInput> | null
+  subscriptions?: Prisma.BillingSubscriptionListRelationFilter
+  paymentEvents?: Prisma.BillingPaymentEventListRelationFilter
 }
 
 export type ProfileOrderByWithRelationInput = {
@@ -190,6 +193,9 @@ export type ProfileOrderByWithRelationInput = {
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  creditAccount?: Prisma.CreditAccountOrderByWithRelationInput
+  subscriptions?: Prisma.BillingSubscriptionOrderByRelationAggregateInput
+  paymentEvents?: Prisma.BillingPaymentEventOrderByRelationAggregateInput
 }
 
 export type ProfileWhereUniqueInput = Prisma.AtLeast<{
@@ -201,6 +207,9 @@ export type ProfileWhereUniqueInput = Prisma.AtLeast<{
   displayName?: Prisma.StringNullableFilter<"Profile"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Profile"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Profile"> | Date | string
+  creditAccount?: Prisma.XOR<Prisma.CreditAccountNullableScalarRelationFilter, Prisma.CreditAccountWhereInput> | null
+  subscriptions?: Prisma.BillingSubscriptionListRelationFilter
+  paymentEvents?: Prisma.BillingPaymentEventListRelationFilter
 }, "id" | "email">
 
 export type ProfileOrderByWithAggregationInput = {
@@ -231,6 +240,9 @@ export type ProfileCreateInput = {
   displayName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountCreateNestedOneWithoutProfileInput
+  subscriptions?: Prisma.BillingSubscriptionCreateNestedManyWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventCreateNestedManyWithoutProfileInput
 }
 
 export type ProfileUncheckedCreateInput = {
@@ -239,6 +251,9 @@ export type ProfileUncheckedCreateInput = {
   displayName?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedCreateNestedOneWithoutProfileInput
+  subscriptions?: Prisma.BillingSubscriptionUncheckedCreateNestedManyWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type ProfileUpdateInput = {
@@ -247,6 +262,9 @@ export type ProfileUpdateInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUpdateOneWithoutProfileNestedInput
+  subscriptions?: Prisma.BillingSubscriptionUpdateManyWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUpdateManyWithoutProfileNestedInput
 }
 
 export type ProfileUncheckedUpdateInput = {
@@ -255,6 +273,9 @@ export type ProfileUncheckedUpdateInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedUpdateOneWithoutProfileNestedInput
+  subscriptions?: Prisma.BillingSubscriptionUncheckedUpdateManyWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type ProfileCreateManyInput = {
@@ -305,6 +326,16 @@ export type ProfileMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type ProfileScalarRelationFilter = {
+  is?: Prisma.ProfileWhereInput
+  isNot?: Prisma.ProfileWhereInput
+}
+
+export type ProfileNullableScalarRelationFilter = {
+  is?: Prisma.ProfileWhereInput | null
+  isNot?: Prisma.ProfileWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -317,6 +348,256 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type ProfileCreateNestedOneWithoutCreditAccountInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutCreditAccountInput, Prisma.ProfileUncheckedCreateWithoutCreditAccountInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutCreditAccountInput
+  connect?: Prisma.ProfileWhereUniqueInput
+}
+
+export type ProfileUpdateOneRequiredWithoutCreditAccountNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutCreditAccountInput, Prisma.ProfileUncheckedCreateWithoutCreditAccountInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutCreditAccountInput
+  upsert?: Prisma.ProfileUpsertWithoutCreditAccountInput
+  connect?: Prisma.ProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutCreditAccountInput, Prisma.ProfileUpdateWithoutCreditAccountInput>, Prisma.ProfileUncheckedUpdateWithoutCreditAccountInput>
+}
+
+export type ProfileCreateNestedOneWithoutSubscriptionsInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSubscriptionsInput, Prisma.ProfileUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSubscriptionsInput
+  connect?: Prisma.ProfileWhereUniqueInput
+}
+
+export type ProfileUpdateOneRequiredWithoutSubscriptionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutSubscriptionsInput, Prisma.ProfileUncheckedCreateWithoutSubscriptionsInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutSubscriptionsInput
+  upsert?: Prisma.ProfileUpsertWithoutSubscriptionsInput
+  connect?: Prisma.ProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutSubscriptionsInput, Prisma.ProfileUpdateWithoutSubscriptionsInput>, Prisma.ProfileUncheckedUpdateWithoutSubscriptionsInput>
+}
+
+export type ProfileCreateNestedOneWithoutPaymentEventsInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutPaymentEventsInput, Prisma.ProfileUncheckedCreateWithoutPaymentEventsInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutPaymentEventsInput
+  connect?: Prisma.ProfileWhereUniqueInput
+}
+
+export type ProfileUpdateOneWithoutPaymentEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfileCreateWithoutPaymentEventsInput, Prisma.ProfileUncheckedCreateWithoutPaymentEventsInput>
+  connectOrCreate?: Prisma.ProfileCreateOrConnectWithoutPaymentEventsInput
+  upsert?: Prisma.ProfileUpsertWithoutPaymentEventsInput
+  disconnect?: Prisma.ProfileWhereInput | boolean
+  delete?: Prisma.ProfileWhereInput | boolean
+  connect?: Prisma.ProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfileUpdateToOneWithWhereWithoutPaymentEventsInput, Prisma.ProfileUpdateWithoutPaymentEventsInput>, Prisma.ProfileUncheckedUpdateWithoutPaymentEventsInput>
+}
+
+export type ProfileCreateWithoutCreditAccountInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  subscriptions?: Prisma.BillingSubscriptionCreateNestedManyWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileUncheckedCreateWithoutCreditAccountInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  subscriptions?: Prisma.BillingSubscriptionUncheckedCreateNestedManyWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileCreateOrConnectWithoutCreditAccountInput = {
+  where: Prisma.ProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutCreditAccountInput, Prisma.ProfileUncheckedCreateWithoutCreditAccountInput>
+}
+
+export type ProfileUpsertWithoutCreditAccountInput = {
+  update: Prisma.XOR<Prisma.ProfileUpdateWithoutCreditAccountInput, Prisma.ProfileUncheckedUpdateWithoutCreditAccountInput>
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutCreditAccountInput, Prisma.ProfileUncheckedCreateWithoutCreditAccountInput>
+  where?: Prisma.ProfileWhereInput
+}
+
+export type ProfileUpdateToOneWithWhereWithoutCreditAccountInput = {
+  where?: Prisma.ProfileWhereInput
+  data: Prisma.XOR<Prisma.ProfileUpdateWithoutCreditAccountInput, Prisma.ProfileUncheckedUpdateWithoutCreditAccountInput>
+}
+
+export type ProfileUpdateWithoutCreditAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.BillingSubscriptionUpdateManyWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUpdateManyWithoutProfileNestedInput
+}
+
+export type ProfileUncheckedUpdateWithoutCreditAccountInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subscriptions?: Prisma.BillingSubscriptionUncheckedUpdateManyWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type ProfileCreateWithoutSubscriptionsInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountCreateNestedOneWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileUncheckedCreateWithoutSubscriptionsInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedCreateNestedOneWithoutProfileInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileCreateOrConnectWithoutSubscriptionsInput = {
+  where: Prisma.ProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutSubscriptionsInput, Prisma.ProfileUncheckedCreateWithoutSubscriptionsInput>
+}
+
+export type ProfileUpsertWithoutSubscriptionsInput = {
+  update: Prisma.XOR<Prisma.ProfileUpdateWithoutSubscriptionsInput, Prisma.ProfileUncheckedUpdateWithoutSubscriptionsInput>
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutSubscriptionsInput, Prisma.ProfileUncheckedCreateWithoutSubscriptionsInput>
+  where?: Prisma.ProfileWhereInput
+}
+
+export type ProfileUpdateToOneWithWhereWithoutSubscriptionsInput = {
+  where?: Prisma.ProfileWhereInput
+  data: Prisma.XOR<Prisma.ProfileUpdateWithoutSubscriptionsInput, Prisma.ProfileUncheckedUpdateWithoutSubscriptionsInput>
+}
+
+export type ProfileUpdateWithoutSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUpdateOneWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUpdateManyWithoutProfileNestedInput
+}
+
+export type ProfileUncheckedUpdateWithoutSubscriptionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedUpdateOneWithoutProfileNestedInput
+  paymentEvents?: Prisma.BillingPaymentEventUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type ProfileCreateWithoutPaymentEventsInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountCreateNestedOneWithoutProfileInput
+  subscriptions?: Prisma.BillingSubscriptionCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileUncheckedCreateWithoutPaymentEventsInput = {
+  id: string
+  email?: string | null
+  displayName?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedCreateNestedOneWithoutProfileInput
+  subscriptions?: Prisma.BillingSubscriptionUncheckedCreateNestedManyWithoutProfileInput
+}
+
+export type ProfileCreateOrConnectWithoutPaymentEventsInput = {
+  where: Prisma.ProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutPaymentEventsInput, Prisma.ProfileUncheckedCreateWithoutPaymentEventsInput>
+}
+
+export type ProfileUpsertWithoutPaymentEventsInput = {
+  update: Prisma.XOR<Prisma.ProfileUpdateWithoutPaymentEventsInput, Prisma.ProfileUncheckedUpdateWithoutPaymentEventsInput>
+  create: Prisma.XOR<Prisma.ProfileCreateWithoutPaymentEventsInput, Prisma.ProfileUncheckedCreateWithoutPaymentEventsInput>
+  where?: Prisma.ProfileWhereInput
+}
+
+export type ProfileUpdateToOneWithWhereWithoutPaymentEventsInput = {
+  where?: Prisma.ProfileWhereInput
+  data: Prisma.XOR<Prisma.ProfileUpdateWithoutPaymentEventsInput, Prisma.ProfileUncheckedUpdateWithoutPaymentEventsInput>
+}
+
+export type ProfileUpdateWithoutPaymentEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUpdateOneWithoutProfileNestedInput
+  subscriptions?: Prisma.BillingSubscriptionUpdateManyWithoutProfileNestedInput
+}
+
+export type ProfileUncheckedUpdateWithoutPaymentEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  creditAccount?: Prisma.CreditAccountUncheckedUpdateOneWithoutProfileNestedInput
+  subscriptions?: Prisma.BillingSubscriptionUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+
+/**
+ * Count Type ProfileCountOutputType
+ */
+
+export type ProfileCountOutputType = {
+  subscriptions: number
+  paymentEvents: number
+}
+
+export type ProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  subscriptions?: boolean | ProfileCountOutputTypeCountSubscriptionsArgs
+  paymentEvents?: boolean | ProfileCountOutputTypeCountPaymentEventsArgs
+}
+
+/**
+ * ProfileCountOutputType without action
+ */
+export type ProfileCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProfileCountOutputType
+   */
+  select?: Prisma.ProfileCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ProfileCountOutputType without action
+ */
+export type ProfileCountOutputTypeCountSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingSubscriptionWhereInput
+}
+
+/**
+ * ProfileCountOutputType without action
+ */
+export type ProfileCountOutputTypeCountPaymentEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BillingPaymentEventWhereInput
+}
 
 
 export type ProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -325,6 +606,10 @@ export type ProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   displayName?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  creditAccount?: boolean | Prisma.Profile$creditAccountArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Profile$subscriptionsArgs<ExtArgs>
+  paymentEvents?: boolean | Prisma.Profile$paymentEventsArgs<ExtArgs>
+  _count?: boolean | Prisma.ProfileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["profile"]>
 
 export type ProfileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -352,10 +637,22 @@ export type ProfileSelectScalar = {
 }
 
 export type ProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "displayName" | "createdAt" | "updatedAt", ExtArgs["result"]["profile"]>
+export type ProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  creditAccount?: boolean | Prisma.Profile$creditAccountArgs<ExtArgs>
+  subscriptions?: boolean | Prisma.Profile$subscriptionsArgs<ExtArgs>
+  paymentEvents?: boolean | Prisma.Profile$paymentEventsArgs<ExtArgs>
+  _count?: boolean | Prisma.ProfileCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type ProfileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type ProfileIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $ProfilePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Profile"
-  objects: {}
+  objects: {
+    creditAccount: Prisma.$CreditAccountPayload<ExtArgs> | null
+    subscriptions: Prisma.$BillingSubscriptionPayload<ExtArgs>[]
+    paymentEvents: Prisma.$BillingPaymentEventPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     email: string | null
@@ -756,6 +1053,9 @@ readonly fields: ProfileFieldRefs;
  */
 export interface Prisma__ProfileClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  creditAccount<T extends Prisma.Profile$creditAccountArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$creditAccountArgs<ExtArgs>>): Prisma.Prisma__CreditAccountClient<runtime.Types.Result.GetResult<Prisma.$CreditAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  subscriptions<T extends Prisma.Profile$subscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$subscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  paymentEvents<T extends Prisma.Profile$paymentEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Profile$paymentEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingPaymentEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -807,6 +1107,10 @@ export type ProfileFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * Filter, which Profile to fetch.
    */
   where: Prisma.ProfileWhereUniqueInput
@@ -825,6 +1129,10 @@ export type ProfileFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extension
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * Filter, which Profile to fetch.
    */
   where: Prisma.ProfileWhereUniqueInput
@@ -842,6 +1150,10 @@ export type ProfileFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Omit specific fields from the Profile
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
   /**
    * Filter, which Profile to fetch.
    */
@@ -891,6 +1203,10 @@ export type ProfileFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * Filter, which Profile to fetch.
    */
   where?: Prisma.ProfileWhereInput
@@ -938,6 +1254,10 @@ export type ProfileFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Omit specific fields from the Profile
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
   /**
    * Filter, which Profiles to fetch.
    */
@@ -987,6 +1307,10 @@ export type ProfileCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * The data needed to create a Profile.
    */
   data: Prisma.XOR<Prisma.ProfileCreateInput, Prisma.ProfileUncheckedCreateInput>
@@ -1034,6 +1358,10 @@ export type ProfileUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the Profile
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
   /**
    * The data needed to update a Profile.
    */
@@ -1101,6 +1429,10 @@ export type ProfileUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * The filter to search for the Profile to update in case it exists.
    */
   where: Prisma.ProfileWhereUniqueInput
@@ -1127,6 +1459,10 @@ export type ProfileDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
+  /**
    * Filter which Profile to delete.
    */
   where: Prisma.ProfileWhereUniqueInput
@@ -1147,6 +1483,73 @@ export type ProfileDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
+ * Profile.creditAccount
+ */
+export type Profile$creditAccountArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CreditAccount
+   */
+  select?: Prisma.CreditAccountSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CreditAccount
+   */
+  omit?: Prisma.CreditAccountOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CreditAccountInclude<ExtArgs> | null
+  where?: Prisma.CreditAccountWhereInput
+}
+
+/**
+ * Profile.subscriptions
+ */
+export type Profile$subscriptionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingSubscription
+   */
+  select?: Prisma.BillingSubscriptionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingSubscription
+   */
+  omit?: Prisma.BillingSubscriptionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingSubscriptionInclude<ExtArgs> | null
+  where?: Prisma.BillingSubscriptionWhereInput
+  orderBy?: Prisma.BillingSubscriptionOrderByWithRelationInput | Prisma.BillingSubscriptionOrderByWithRelationInput[]
+  cursor?: Prisma.BillingSubscriptionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingSubscriptionScalarFieldEnum | Prisma.BillingSubscriptionScalarFieldEnum[]
+}
+
+/**
+ * Profile.paymentEvents
+ */
+export type Profile$paymentEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BillingPaymentEvent
+   */
+  select?: Prisma.BillingPaymentEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BillingPaymentEvent
+   */
+  omit?: Prisma.BillingPaymentEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BillingPaymentEventInclude<ExtArgs> | null
+  where?: Prisma.BillingPaymentEventWhereInput
+  orderBy?: Prisma.BillingPaymentEventOrderByWithRelationInput | Prisma.BillingPaymentEventOrderByWithRelationInput[]
+  cursor?: Prisma.BillingPaymentEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BillingPaymentEventScalarFieldEnum | Prisma.BillingPaymentEventScalarFieldEnum[]
+}
+
+/**
  * Profile without action
  */
 export type ProfileDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1158,4 +1561,8 @@ export type ProfileDefaultArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Omit specific fields from the Profile
    */
   omit?: Prisma.ProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProfileInclude<ExtArgs> | null
 }

@@ -384,7 +384,13 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  Profile: 'Profile'
+  Profile: 'Profile',
+  CreditAccount: 'CreditAccount',
+  CreditTransaction: 'CreditTransaction',
+  CreditPricingRule: 'CreditPricingRule',
+  BillingPlan: 'BillingPlan',
+  BillingSubscription: 'BillingSubscription',
+  BillingPaymentEvent: 'BillingPaymentEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -400,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "profile"
+    modelProps: "profile" | "creditAccount" | "creditTransaction" | "creditPricingRule" | "billingPlan" | "billingSubscription" | "billingPaymentEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -478,6 +484,450 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CreditAccount: {
+      payload: Prisma.$CreditAccountPayload<ExtArgs>
+      fields: Prisma.CreditAccountFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CreditAccountFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CreditAccountFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        findFirst: {
+          args: Prisma.CreditAccountFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CreditAccountFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        findMany: {
+          args: Prisma.CreditAccountFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>[]
+        }
+        create: {
+          args: Prisma.CreditAccountCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        createMany: {
+          args: Prisma.CreditAccountCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CreditAccountCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>[]
+        }
+        delete: {
+          args: Prisma.CreditAccountDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        update: {
+          args: Prisma.CreditAccountUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        deleteMany: {
+          args: Prisma.CreditAccountDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CreditAccountUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CreditAccountUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>[]
+        }
+        upsert: {
+          args: Prisma.CreditAccountUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditAccountPayload>
+        }
+        aggregate: {
+          args: Prisma.CreditAccountAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCreditAccount>
+        }
+        groupBy: {
+          args: Prisma.CreditAccountGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditAccountGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CreditAccountCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditAccountCountAggregateOutputType> | number
+        }
+      }
+    }
+    CreditTransaction: {
+      payload: Prisma.$CreditTransactionPayload<ExtArgs>
+      fields: Prisma.CreditTransactionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CreditTransactionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CreditTransactionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        findFirst: {
+          args: Prisma.CreditTransactionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CreditTransactionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        findMany: {
+          args: Prisma.CreditTransactionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>[]
+        }
+        create: {
+          args: Prisma.CreditTransactionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        createMany: {
+          args: Prisma.CreditTransactionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CreditTransactionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>[]
+        }
+        delete: {
+          args: Prisma.CreditTransactionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        update: {
+          args: Prisma.CreditTransactionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        deleteMany: {
+          args: Prisma.CreditTransactionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CreditTransactionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CreditTransactionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>[]
+        }
+        upsert: {
+          args: Prisma.CreditTransactionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditTransactionPayload>
+        }
+        aggregate: {
+          args: Prisma.CreditTransactionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCreditTransaction>
+        }
+        groupBy: {
+          args: Prisma.CreditTransactionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditTransactionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CreditTransactionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditTransactionCountAggregateOutputType> | number
+        }
+      }
+    }
+    CreditPricingRule: {
+      payload: Prisma.$CreditPricingRulePayload<ExtArgs>
+      fields: Prisma.CreditPricingRuleFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CreditPricingRuleFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CreditPricingRuleFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        findFirst: {
+          args: Prisma.CreditPricingRuleFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CreditPricingRuleFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        findMany: {
+          args: Prisma.CreditPricingRuleFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>[]
+        }
+        create: {
+          args: Prisma.CreditPricingRuleCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        createMany: {
+          args: Prisma.CreditPricingRuleCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CreditPricingRuleCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>[]
+        }
+        delete: {
+          args: Prisma.CreditPricingRuleDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        update: {
+          args: Prisma.CreditPricingRuleUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        deleteMany: {
+          args: Prisma.CreditPricingRuleDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CreditPricingRuleUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CreditPricingRuleUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>[]
+        }
+        upsert: {
+          args: Prisma.CreditPricingRuleUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CreditPricingRulePayload>
+        }
+        aggregate: {
+          args: Prisma.CreditPricingRuleAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCreditPricingRule>
+        }
+        groupBy: {
+          args: Prisma.CreditPricingRuleGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditPricingRuleGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CreditPricingRuleCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CreditPricingRuleCountAggregateOutputType> | number
+        }
+      }
+    }
+    BillingPlan: {
+      payload: Prisma.$BillingPlanPayload<ExtArgs>
+      fields: Prisma.BillingPlanFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BillingPlanFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BillingPlanFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        findFirst: {
+          args: Prisma.BillingPlanFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BillingPlanFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        findMany: {
+          args: Prisma.BillingPlanFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>[]
+        }
+        create: {
+          args: Prisma.BillingPlanCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        createMany: {
+          args: Prisma.BillingPlanCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BillingPlanCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>[]
+        }
+        delete: {
+          args: Prisma.BillingPlanDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        update: {
+          args: Prisma.BillingPlanUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        deleteMany: {
+          args: Prisma.BillingPlanDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BillingPlanUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BillingPlanUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>[]
+        }
+        upsert: {
+          args: Prisma.BillingPlanUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPlanPayload>
+        }
+        aggregate: {
+          args: Prisma.BillingPlanAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBillingPlan>
+        }
+        groupBy: {
+          args: Prisma.BillingPlanGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingPlanGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BillingPlanCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingPlanCountAggregateOutputType> | number
+        }
+      }
+    }
+    BillingSubscription: {
+      payload: Prisma.$BillingSubscriptionPayload<ExtArgs>
+      fields: Prisma.BillingSubscriptionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BillingSubscriptionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BillingSubscriptionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        findFirst: {
+          args: Prisma.BillingSubscriptionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BillingSubscriptionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        findMany: {
+          args: Prisma.BillingSubscriptionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>[]
+        }
+        create: {
+          args: Prisma.BillingSubscriptionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        createMany: {
+          args: Prisma.BillingSubscriptionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BillingSubscriptionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>[]
+        }
+        delete: {
+          args: Prisma.BillingSubscriptionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        update: {
+          args: Prisma.BillingSubscriptionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        deleteMany: {
+          args: Prisma.BillingSubscriptionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BillingSubscriptionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BillingSubscriptionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>[]
+        }
+        upsert: {
+          args: Prisma.BillingSubscriptionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingSubscriptionPayload>
+        }
+        aggregate: {
+          args: Prisma.BillingSubscriptionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBillingSubscription>
+        }
+        groupBy: {
+          args: Prisma.BillingSubscriptionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingSubscriptionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BillingSubscriptionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingSubscriptionCountAggregateOutputType> | number
+        }
+      }
+    }
+    BillingPaymentEvent: {
+      payload: Prisma.$BillingPaymentEventPayload<ExtArgs>
+      fields: Prisma.BillingPaymentEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BillingPaymentEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BillingPaymentEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        findFirst: {
+          args: Prisma.BillingPaymentEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BillingPaymentEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        findMany: {
+          args: Prisma.BillingPaymentEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>[]
+        }
+        create: {
+          args: Prisma.BillingPaymentEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        createMany: {
+          args: Prisma.BillingPaymentEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BillingPaymentEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>[]
+        }
+        delete: {
+          args: Prisma.BillingPaymentEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        update: {
+          args: Prisma.BillingPaymentEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.BillingPaymentEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BillingPaymentEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BillingPaymentEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.BillingPaymentEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BillingPaymentEventPayload>
+        }
+        aggregate: {
+          args: Prisma.BillingPaymentEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBillingPaymentEvent>
+        }
+        groupBy: {
+          args: Prisma.BillingPaymentEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingPaymentEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BillingPaymentEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BillingPaymentEventCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -528,12 +978,104 @@ export const ProfileScalarFieldEnum = {
 export type ProfileScalarFieldEnum = (typeof ProfileScalarFieldEnum)[keyof typeof ProfileScalarFieldEnum]
 
 
+export const CreditAccountScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  balance: 'balance',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CreditAccountScalarFieldEnum = (typeof CreditAccountScalarFieldEnum)[keyof typeof CreditAccountScalarFieldEnum]
+
+
+export const CreditTransactionScalarFieldEnum = {
+  id: 'id',
+  creditAccountId: 'creditAccountId',
+  direction: 'direction',
+  amount: 'amount',
+  balanceAfter: 'balanceAfter',
+  reason: 'reason',
+  operationCode: 'operationCode',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type CreditTransactionScalarFieldEnum = (typeof CreditTransactionScalarFieldEnum)[keyof typeof CreditTransactionScalarFieldEnum]
+
+
+export const CreditPricingRuleScalarFieldEnum = {
+  code: 'code',
+  creditsPerUnit: 'creditsPerUnit',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CreditPricingRuleScalarFieldEnum = (typeof CreditPricingRuleScalarFieldEnum)[keyof typeof CreditPricingRuleScalarFieldEnum]
+
+
+export const BillingPlanScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  priceCents: 'priceCents',
+  currency: 'currency',
+  interval: 'interval',
+  monthlyCredits: 'monthlyCredits',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingPlanScalarFieldEnum = (typeof BillingPlanScalarFieldEnum)[keyof typeof BillingPlanScalarFieldEnum]
+
+
+export const BillingSubscriptionScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  planId: 'planId',
+  status: 'status',
+  currentPeriodStart: 'currentPeriodStart',
+  currentPeriodEnd: 'currentPeriodEnd',
+  cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingSubscriptionScalarFieldEnum = (typeof BillingSubscriptionScalarFieldEnum)[keyof typeof BillingSubscriptionScalarFieldEnum]
+
+
+export const BillingPaymentEventScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  subscriptionId: 'subscriptionId',
+  provider: 'provider',
+  providerEventId: 'providerEventId',
+  eventType: 'eventType',
+  status: 'status',
+  payload: 'payload',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingPaymentEventScalarFieldEnum = (typeof BillingPaymentEventScalarFieldEnum)[keyof typeof BillingPaymentEventScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -550,6 +1092,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -597,6 +1148,125 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'CreditTransactionDirection'
+ */
+export type EnumCreditTransactionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CreditTransactionDirection'>
+    
+
+
+/**
+ * Reference to a field of type 'CreditTransactionDirection[]'
+ */
+export type ListEnumCreditTransactionDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CreditTransactionDirection[]'>
+    
+
+
+/**
+ * Reference to a field of type 'CreditPricingRuleCode'
+ */
+export type EnumCreditPricingRuleCodeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CreditPricingRuleCode'>
+    
+
+
+/**
+ * Reference to a field of type 'CreditPricingRuleCode[]'
+ */
+export type ListEnumCreditPricingRuleCodeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CreditPricingRuleCode[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPlanCode'
+ */
+export type EnumBillingPlanCodeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPlanCode'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPlanCode[]'
+ */
+export type ListEnumBillingPlanCodeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPlanCode[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPlanInterval'
+ */
+export type EnumBillingPlanIntervalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPlanInterval'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPlanInterval[]'
+ */
+export type ListEnumBillingPlanIntervalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPlanInterval[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingSubscriptionStatus'
+ */
+export type EnumBillingSubscriptionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingSubscriptionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingSubscriptionStatus[]'
+ */
+export type ListEnumBillingSubscriptionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingSubscriptionStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPaymentEventStatus'
+ */
+export type EnumBillingPaymentEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPaymentEventStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'BillingPaymentEventStatus[]'
+ */
+export type ListEnumBillingPaymentEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingPaymentEventStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -695,6 +1365,12 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   profile?: Prisma.ProfileOmit
+  creditAccount?: Prisma.CreditAccountOmit
+  creditTransaction?: Prisma.CreditTransactionOmit
+  creditPricingRule?: Prisma.CreditPricingRuleOmit
+  billingPlan?: Prisma.BillingPlanOmit
+  billingSubscription?: Prisma.BillingSubscriptionOmit
+  billingPaymentEvent?: Prisma.BillingPaymentEventOmit
 }
 
 /* Types for Logging */

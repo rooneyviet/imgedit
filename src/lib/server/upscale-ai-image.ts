@@ -8,6 +8,13 @@ import { runs, tasks } from "@trigger.dev/sdk"
 
 import { requireAuthenticatedUser } from "./auth"
 import {
+  CREDIT_OPERATION_CODES,
+  assertSufficientCredits,
+  calculateRequiredCredits,
+  chargeCreditsOnSuccess,
+  syncCreditsAndBillingCatalog,
+} from "./credits"
+import {
   UPSCALE_REPLICATE_IMAGE_TASK_ID,
   type UpscaleReplicateImagePayload,
 } from "../../../trigger/upscale-image"
@@ -18,6 +25,8 @@ type UpscaleImageRequest = UpscaleReplicateImagePayload & {
 
 type UpscaleImageResponse = {
   image: string
+  chargedCredits: number
+  remainingCredits: number
 }
 
 function getErrorMessage(error: unknown): string {
@@ -63,8 +72,18 @@ export const upscaleAiImage = createServerFn({ method: "POST" })
       throw new Error("Missing TRIGGER_SECRET_KEY")
     }
 
+    await syncCreditsAndBillingCatalog()
     const input = toRequest(data)
-    await requireAuthenticatedUser(input.accessToken)
+    const user = await requireAuthenticatedUser(input.accessToken)
+    const requiredCredits = await calculateRequiredCredits([
+      {
+        code: CREDIT_OPERATION_CODES.UPSCALE_4K,
+        quantity: 1,
+      },
+    ])
+
+    await assertSufficientCredits(user.id, requiredCredits)
+
     const handle = await tasks.trigger(UPSCALE_REPLICATE_IMAGE_TASK_ID, {
       image: input.image,
     })
@@ -74,7 +93,19 @@ export const upscaleAiImage = createServerFn({ method: "POST" })
       throw new Error(getErrorMessage(run.error))
     }
 
+    const chargeResult = await chargeCreditsOnSuccess({
+      profileId: user.id,
+      requiredCredits,
+      reason: "Upscale image to 4K",
+      operationCode: CREDIT_OPERATION_CODES.UPSCALE_4K,
+      metadata: {
+        sourceImage: input.image,
+      },
+    })
+
     return {
       image: extractRunOutputImageUrl(run.output),
+      chargedCredits: requiredCredits,
+      remainingCredits: chargeResult.remainingCredits,
     }
   })

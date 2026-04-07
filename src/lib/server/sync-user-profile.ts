@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start"
 
 import { requireAuthenticatedUser } from "./auth"
+import {
+  ensureUserBillingState,
+  getNormalImageUnitCost,
+  syncCreditsAndBillingCatalog,
+} from "./credits"
 import { prisma } from "./prisma"
 
 type SyncUserProfileRequest = {
@@ -12,6 +17,10 @@ type SyncUserProfileResponse = {
     id: string
     email: string | null
     displayName: string | null
+    remainingCredits: number
+  }
+  pricing: {
+    normalImageCredits: number
   }
 }
 
@@ -37,6 +46,8 @@ function parseDisplayName(metadata: Record<string, unknown>): string | null {
 export const syncUserProfile = createServerFn({ method: "POST" })
   .inputValidator((input: SyncUserProfileRequest) => input)
   .handler(async ({ data }): Promise<SyncUserProfileResponse> => {
+    await syncCreditsAndBillingCatalog()
+
     const user = await requireAuthenticatedUser(data.accessToken)
     const displayName = parseDisplayName(user.userMetadata)
 
@@ -60,6 +71,16 @@ export const syncUserProfile = createServerFn({ method: "POST" })
       },
     })
 
-    return { profile }
-  })
+    const billingState = await ensureUserBillingState(profile.id)
+    const normalImageCredits = await getNormalImageUnitCost()
 
+    return {
+      profile: {
+        ...profile,
+        remainingCredits: billingState.remainingCredits,
+      },
+      pricing: {
+        normalImageCredits,
+      },
+    }
+  })

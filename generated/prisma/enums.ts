@@ -9,7 +9,54 @@
 * 🟢 You can import this file directly.
 */
 
+export const CreditPricingRuleCode = {
+  NORMAL_IMAGE: 'NORMAL_IMAGE',
+  UPSCALE_4K: 'UPSCALE_4K',
+  STYLE_APPLIED: 'STYLE_APPLIED'
+} as const
+
+export type CreditPricingRuleCode = (typeof CreditPricingRuleCode)[keyof typeof CreditPricingRuleCode]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const CreditTransactionDirection = {
+  CREDIT: 'CREDIT',
+  DEBIT: 'DEBIT'
+} as const
+
+export type CreditTransactionDirection = (typeof CreditTransactionDirection)[keyof typeof CreditTransactionDirection]
+
+
+export const BillingPlanCode = {
+  FREE: 'FREE',
+  MONTHLY: 'MONTHLY',
+  ANNUAL: 'ANNUAL'
+} as const
+
+export type BillingPlanCode = (typeof BillingPlanCode)[keyof typeof BillingPlanCode]
+
+
+export const BillingPlanInterval = {
+  MONTHLY: 'MONTHLY',
+  YEARLY: 'YEARLY'
+} as const
+
+export type BillingPlanInterval = (typeof BillingPlanInterval)[keyof typeof BillingPlanInterval]
+
+
+export const BillingSubscriptionStatus = {
+  ACTIVE: 'ACTIVE',
+  CANCELED: 'CANCELED',
+  PAST_DUE: 'PAST_DUE',
+  TRIALING: 'TRIALING'
+} as const
+
+export type BillingSubscriptionStatus = (typeof BillingSubscriptionStatus)[keyof typeof BillingSubscriptionStatus]
+
+
+export const BillingPaymentEventStatus = {
+  RECEIVED: 'RECEIVED',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED'
+} as const
+
+export type BillingPaymentEventStatus = (typeof BillingPaymentEventStatus)[keyof typeof BillingPaymentEventStatus]
