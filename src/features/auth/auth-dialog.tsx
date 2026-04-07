@@ -117,7 +117,7 @@ export function AuthDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-[560px] sm:max-w-[560px] border-none bg-zinc-50 p-0 ring-1 ring-zinc-900/8 shadow-[24px_24px_0px_rgba(167,0,112,0.08)]"
+        className="max-w-140 border-none bg-zinc-50 p-0 shadow-lg ring-0 sm:max-w-140"
       >
         <DialogTitle className="sr-only">Authentication</DialogTitle>
         <div className="relative overflow-hidden">
@@ -131,11 +131,6 @@ export function AuthDialog({
             <XIcon />
             <span className="sr-only">Close</span>
           </Button>
-          <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center opacity-5">
-            <span className="text-[26vw] leading-none font-black tracking-tighter text-zinc-900 select-none">
-              EDITOR
-            </span>
-          </div>
 
           <div className="relative z-10 p-10 md:p-12">
             <div className="mb-10">
@@ -147,22 +142,12 @@ export function AuthDialog({
                   IMG Edit
                 </span>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.26em] text-zinc-500">
-                Technical Precision Mode / 1.0.4
-              </p>
             </div>
 
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xs font-bold tracking-[0.3em] text-zinc-600">
                 {heading}
               </h2>
-              <button
-                type="button"
-                onClick={() => switchMode(mode === "login" ? "register" : "login")}
-                className="text-[10px] font-bold tracking-wider text-primary uppercase hover:underline"
-              >
-                {mode === "login" ? "CREATE_ACCOUNT" : "BACK_TO_LOGIN"}
-              </button>
             </div>
 
             <form className="space-y-6" onSubmit={onSubmit}>
@@ -180,7 +165,7 @@ export function AuthDialog({
                     onChange={(event) => setDisplayName(event.target.value)}
                     placeholder="Operator Name"
                     disabled={isBusy}
-                    className="h-12 border-none bg-zinc-100 px-4 text-sm font-mono placeholder:text-zinc-400"
+                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
                   />
                 </div>
               ) : null}
@@ -200,7 +185,7 @@ export function AuthDialog({
                   placeholder="USER@WORKSPACE.IO"
                   disabled={isBusy}
                   required
-                  className="h-12 border-none bg-zinc-100 px-4 text-sm font-mono placeholder:text-zinc-400"
+                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
                 />
               </div>
 
@@ -219,7 +204,7 @@ export function AuthDialog({
                     }
                     className="text-[9px] font-bold tracking-wider text-primary uppercase hover:underline"
                   >
-                    FORGOT_SECRET?
+                    FORGOT_PASSWORD?
                   </button>
                 </div>
                 <Input
@@ -230,7 +215,7 @@ export function AuthDialog({
                   placeholder="••••••••••••"
                   disabled={isBusy}
                   required
-                  className="h-12 border-none bg-zinc-100 px-4 text-sm font-mono placeholder:text-zinc-400"
+                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
                 />
               </div>
 
@@ -250,7 +235,7 @@ export function AuthDialog({
                     placeholder="••••••••••••"
                     disabled={isBusy}
                     required
-                    className="h-12 border-none bg-zinc-100 px-4 text-sm font-mono placeholder:text-zinc-400"
+                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
                   />
                 </div>
               ) : null}
@@ -306,22 +291,17 @@ export function AuthDialog({
             ) : null}
 
             <div className="pt-6 text-center">
-              <p className="text-[10px] font-medium text-zinc-500">
-                NEW_TO_THE_EDITOR?
-                <button
-                  type="button"
-                  className="ml-1 font-bold text-primary uppercase hover:underline"
-                  onClick={() => switchMode("register")}
-                >
-                  CREATE_ACCOUNT
-                </button>
-              </p>
+              <button
+                type="button"
+                className="text-[10px] font-bold text-primary uppercase hover:underline"
+                onClick={() =>
+                  switchMode(mode === "login" ? "register" : "login")
+                }
+              >
+                {mode === "login" ? "CREATE_ACCOUNT" : "BACK_TO_LOGIN"}
+              </button>
             </div>
           </div>
-        </div>
-        <div className="flex h-1 bg-zinc-200">
-          <div className="w-1/3 bg-primary" />
-          <div className="w-2/3 bg-zinc-200" />
         </div>
       </DialogContent>
     </Dialog>
