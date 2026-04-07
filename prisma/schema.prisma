@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CreditPricingRuleCode {
+  NORMAL_IMAGE
+  UPSCALE_4K
+  STYLE_APPLIED
+}
+
+enum CreditTransactionDirection {
+  CREDIT
+  DEBIT
+}
+
+enum BillingPlanCode {
+  FREE
+  MONTHLY
+  ANNUAL
+}
+
+enum BillingPlanInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum BillingSubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+}
+
+enum BillingPaymentEventStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+model Profile {
+  id          String   @id @db.Uuid
+  email       String?  @unique
+  displayName String?  @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  creditAccount CreditAccount?
+  subscriptions BillingSubscription[]
+  paymentEvents BillingPaymentEvent[]
+
+  @@map("profiles")
+}
+
+model CreditAccount {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId    String   @unique @map("profile_id") @db.Uuid
+  balance      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  transactions CreditTransaction[]
+
+  @@index([profileId])
+  @@map("credit_accounts")
+}
+
+model CreditTransaction {
+  id              String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creditAccountId String                     @map("credit_account_id") @db.Uuid
+  direction       CreditTransactionDirection
+  amount          Int
+  balanceAfter    Int                        @map("balance_after")
+  reason          String
+  operationCode   CreditPricingRuleCode?     @map("operation_code")
+  metadata        Json?
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  creditAccount   CreditAccount              @relation(fields: [creditAccountId], references: [id], onDelete: Cascade)
+
+  @@index([creditAccountId, createdAt])
+  @@index([operationCode])
+  @@map("credit_transactions")
+}
+
+model CreditPricingRule {
+  code           CreditPricingRuleCode @id
+  creditsPerUnit Int                   @map("credits_per_unit")
+  isActive       Boolean               @default(true) @map("is_active")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  @@map("credit_pricing_rules")
+}
+
+model BillingPlan {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code           BillingPlanCode       @unique
+  name           String
+  priceCents     Int                   @default(0) @map("price_cents")
+  currency       String                @default("USD")
+  interval       BillingPlanInterval
+  monthlyCredits Int                   @default(0) @map("monthly_credits")
+  isActive       Boolean               @default(true) @map("is_active")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  subscriptions  BillingSubscription[]
+
+  @@map("billing_plans")
+}
+
+model BillingSubscription {
+  id                String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId         String                    @map("profile_id") @db.Uuid
+  planId            String                    @map("plan_id") @db.Uuid
+  status            BillingSubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime                @default(now()) @map("current_period_start")
+  currentPeriodEnd  DateTime?                 @map("current_period_end")
+  cancelAtPeriodEnd Boolean                   @default(false) @map("cancel_at_period_end")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  profile           Profile                   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  plan              BillingPlan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  paymentEvents     BillingPaymentEvent[]
+
+  @@index([profileId, status])
+  @@index([planId])
+  @@map("billing_subscriptions")
+}
+
+model BillingPaymentEvent {
+  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId       String?                   @map("profile_id") @db.Uuid
+  subscriptionId  String?                   @map("subscription_id") @db.Uuid
+  provider        String
+  providerEventId String                    @map("provider_event_id")
+  eventType       String                    @map("event_type")
+  status          BillingPaymentEventStatus @default(RECEIVED)
+  payload         Json?
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+  profile         Profile?                  @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  subscription    BillingSubscription?      @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerEventId])
+  @@index([profileId])
+  @@index([subscriptionId])
+  @@map("billing_payment_events")
+}

@@ -1,0 +1,309 @@
+import { type FormEvent, useMemo, useState } from "react"
+import { ArrowRight, Pencil, XIcon } from "lucide-react"
+
+import type { AuthMode, RegisterPayload } from "./use-auth"
+
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+
+type AuthDialogProps = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  mode: AuthMode
+  isLoadingSession: boolean
+  isSubmitting: boolean
+  error: string | null
+  verificationEmail: string | null
+  onModeChange: (mode: AuthMode) => void
+  onLogin: (payload: { email: string; password: string }) => Promise<boolean>
+  onRegister: (payload: RegisterPayload) => Promise<boolean>
+  onDismissVerificationNotice: () => void
+}
+
+const PASS_MIN_LENGTH = 8
+
+export function AuthDialog({
+  open,
+  onOpenChange,
+  mode,
+  isLoadingSession,
+  isSubmitting,
+  error,
+  verificationEmail,
+  onModeChange,
+  onLogin,
+  onRegister,
+  onDismissVerificationNotice,
+}: AuthDialogProps) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [displayName, setDisplayName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [providerMessage, setProviderMessage] = useState<string | null>(null)
+  const [localError, setLocalError] = useState<string | null>(null)
+
+  const heading = mode === "login" ? "LOGIN" : "REGISTER"
+  const submitLabel = mode === "login" ? "SIGN_IN" : "CREATE_ACCOUNT"
+
+  const activeError = localError || error
+  const isBusy = isLoadingSession || isSubmitting
+
+  const verificationHint = useMemo(() => {
+    if (!verificationEmail) {
+      return null
+    }
+    return `Verification pending for ${verificationEmail}`
+  }, [verificationEmail])
+
+  const resetProviderMessage = () => setProviderMessage(null)
+
+  const resetForm = () => {
+    setPassword("")
+    setConfirmPassword("")
+    setLocalError(null)
+    setProviderMessage(null)
+  }
+
+  const switchMode = (nextMode: AuthMode) => {
+    onModeChange(nextMode)
+    setLocalError(null)
+    resetProviderMessage()
+    if (nextMode === "register") {
+      onDismissVerificationNotice()
+    }
+  }
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLocalError(null)
+    resetProviderMessage()
+
+    if (mode === "register") {
+      if (displayName.trim().length < 2) {
+        setLocalError("Display name must be at least 2 characters")
+        return
+      }
+      if (password.length < PASS_MIN_LENGTH) {
+        setLocalError(`Password must be at least ${PASS_MIN_LENGTH} characters`)
+        return
+      }
+      if (password !== confirmPassword) {
+        setLocalError("Password and confirm password do not match")
+        return
+      }
+
+      const success = await onRegister({
+        displayName: displayName.trim(),
+        email: email.trim(),
+        password,
+      })
+      if (success) {
+        resetForm()
+      }
+      return
+    }
+
+    const success = await onLogin({
+      email: email.trim(),
+      password,
+    })
+    if (success) {
+      resetForm()
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-140 border-none bg-zinc-50 p-0 shadow-lg ring-0 sm:max-w-140"
+      >
+        <DialogTitle className="sr-only">Authentication</DialogTitle>
+        <div className="relative overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="absolute top-2 right-2 z-30"
+            onClick={() => onOpenChange(false)}
+          >
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </Button>
+
+          <div className="relative z-10 p-10 md:p-12">
+            <div className="mb-10">
+              <div className="mb-2 flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center bg-primary text-primary-foreground">
+                  <Pencil className="size-4" />
+                </div>
+                <span className="text-2xl font-black tracking-tighter text-zinc-900">
+                  IMG Edit
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xs font-bold tracking-[0.3em] text-zinc-600">
+                {heading}
+              </h2>
+            </div>
+
+            <form className="space-y-6" onSubmit={onSubmit}>
+              {mode === "register" ? (
+                <div className="space-y-2">
+                  <label
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    htmlFor="display-name"
+                  >
+                    DISPLAY_NAME
+                  </label>
+                  <Input
+                    id="display-name"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    placeholder="Operator Name"
+                    disabled={isBusy}
+                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                  />
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <label
+                  className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                  htmlFor="auth-email"
+                >
+                  EMAIL_ADDRESS
+                </label>
+                <Input
+                  id="auth-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="USER@WORKSPACE.IO"
+                  disabled={isBusy}
+                  required
+                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-end justify-between">
+                  <label
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    htmlFor="auth-password"
+                  >
+                    PASSWORD
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLocalError("Password reset flow is not wired yet")
+                    }
+                    className="text-[9px] font-bold tracking-wider text-primary uppercase hover:underline"
+                  >
+                    FORGOT_PASSWORD?
+                  </button>
+                </div>
+                <Input
+                  id="auth-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="••••••••••••"
+                  disabled={isBusy}
+                  required
+                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                />
+              </div>
+
+              {mode === "register" ? (
+                <div className="space-y-2">
+                  <label
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    htmlFor="auth-confirm-password"
+                  >
+                    CONFIRM_PASSWORD
+                  </label>
+                  <Input
+                    id="auth-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="••••••••••••"
+                    disabled={isBusy}
+                    required
+                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                  />
+                </div>
+              ) : null}
+
+              <div className="space-y-4 pt-1">
+                <Button
+                  type="submit"
+                  disabled={isBusy}
+                  className="h-14 w-full bg-gradient-to-br from-primary to-fuchsia-500 text-xs font-bold tracking-[0.2em] text-primary-foreground uppercase hover:opacity-90"
+                >
+                  {isBusy ? "PROCESSING..." : submitLabel}
+                  <ArrowRight className="size-4" />
+                </Button>
+
+                <div className="relative flex items-center py-1">
+                  <div className="grow border-t border-zinc-300/60" />
+                  <span className="mx-3 text-[9px] font-bold tracking-widest text-zinc-400 uppercase">
+                    OR_USE_PROVIDER
+                  </span>
+                  <div className="grow border-t border-zinc-300/60" />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() =>
+                    setProviderMessage("Google auth is coming soon in this app")
+                  }
+                  className="h-14 w-full border-zinc-300/70 bg-zinc-50 text-xs font-bold tracking-[0.2em] text-zinc-800 uppercase hover:bg-zinc-100"
+                >
+                  CONTINUE_WITH_GOOGLE
+                </Button>
+              </div>
+            </form>
+
+            {verificationHint ? (
+              <div className="mt-5 bg-emerald-100 px-3 py-2 text-[10px] font-semibold tracking-wide text-emerald-800 uppercase">
+                {verificationHint}. Check your inbox, then sign in.
+              </div>
+            ) : null}
+
+            {providerMessage ? (
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-zinc-600 uppercase">
+                {providerMessage}
+              </p>
+            ) : null}
+
+            {activeError ? (
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-red-600 uppercase">
+                {activeError}
+              </p>
+            ) : null}
+
+            <div className="pt-6 text-center">
+              <button
+                type="button"
+                className="text-[10px] font-bold text-primary uppercase hover:underline"
+                onClick={() =>
+                  switchMode(mode === "login" ? "register" : "login")
+                }
+              >
+                {mode === "login" ? "CREATE_ACCOUNT" : "BACK_TO_LOGIN"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1,13 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-mono);
-    --font-mono: 'JetBrains Mono Variable', monospace;
+    --font-body: "Inter", sans-serif;
+    --font-heading: "Space Grotesk", "Inter", sans-serif;
+    --font-mono: "JetBrains Mono Variable", monospace;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,24 +52,24 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0.008 326);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0.008 326);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0.008 326);
-    --primary: oklch(0.518 0.253 323.949);
-    --primary-foreground: oklch(0.977 0.017 320.058);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.96 0.003 325.6);
-    --muted-foreground: oklch(0.542 0.034 322.5);
-    --accent: oklch(0.518 0.253 323.949);
-    --accent-foreground: oklch(0.977 0.017 320.058);
+    --background: oklch(0.98 0.002 285);
+    --foreground: oklch(0.21 0.01 320);
+    --card: oklch(0.995 0.002 320);
+    --card-foreground: oklch(0.21 0.01 320);
+    --popover: oklch(0.995 0.002 320);
+    --popover-foreground: oklch(0.21 0.01 320);
+    --primary: oklch(0.52 0.24 340);
+    --primary-foreground: oklch(0.985 0.01 320);
+    --secondary: oklch(0.93 0.003 320);
+    --secondary-foreground: oklch(0.29 0.02 320);
+    --muted: oklch(0.94 0.003 320);
+    --muted-foreground: oklch(0.47 0.02 325);
+    --accent: oklch(0.57 0.25 338);
+    --accent-foreground: oklch(0.985 0.01 320);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0.005 325.62);
-    --input: oklch(0.922 0.005 325.62);
-    --ring: oklch(0.711 0.019 323.02);
+    --border: oklch(0.88 0.007 323);
+    --input: oklch(0.88 0.007 323);
+    --ring: oklch(0.69 0.03 330);
     --chart-1: oklch(0.897 0.196 126.665);
     --chart-2: oklch(0.768 0.233 130.85);
     --chart-3: oklch(0.648 0.2 131.684);
@@ -120,11 +123,21 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply bg-background text-foreground font-body;
+  }
   html {
-    @apply font-mono;
-    }
+    @apply antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: oklch(0.92 0.004 320);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.52 0.24 340);
+  }
 }

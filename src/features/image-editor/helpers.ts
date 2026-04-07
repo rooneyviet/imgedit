@@ -1,6 +1,8 @@
 import type { GenerateReplicateImagePayload } from "../../../trigger/generate-ai-image"
 
-export type AspectRatio = NonNullable<GenerateReplicateImagePayload["aspectRatio"]>
+export type AspectRatio = NonNullable<
+  GenerateReplicateImagePayload["aspectRatio"]
+>
 
 export type GalleryItem = {
   id: string
@@ -98,11 +100,11 @@ export function createEmptyGeneratedSlots(count: number): Array<GeneratedSlot> {
 
 export function createPreviewImageDataUrl(aspectRatio: AspectRatio): string {
   const { width, height } = parseAspectRatioDimensions(aspectRatio)
-  const svgWidth = width * 100
-  const svgHeight = height * 100
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}' viewBox='0 0 ${svgWidth} ${svgHeight}'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#f59e0b'/><stop offset='1' stop-color='#0f172a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/></svg>`
+  const previewWidth = 2000
+  const previewHeight = Math.max(1, Math.round((previewWidth * height) / width))
+  const text = encodeURIComponent("Preview\nImage")
 
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+  return `https://placehold.co/${previewWidth}x${previewHeight}?text=${text}`
 }
 
 export function createPreviewGalleryItems(

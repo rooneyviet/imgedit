@@ -35,8 +35,14 @@ export type GenerateImagesPayload = {
 export type ImageEditorServices = {
   generateImages: (payload: GenerateImagesPayload) => Promise<{
     images: Array<string>
+    chargedCredits: number
+    remainingCredits: number
   }>
-  upscaleImage: (payload: { image: string }) => Promise<{ image?: string | null }>
+  upscaleImage: (payload: { image: string }) => Promise<{
+    image?: string | null
+    chargedCredits: number
+    remainingCredits: number
+  }>
   downloadImage: (payload: { imageUrl: string }) => Promise<{
     base64: string
     contentType?: string | null
@@ -51,6 +57,10 @@ export type ImageEditorHelpers = {
 type UseImageEditorOptions = {
   isDev: boolean
   services: ImageEditorServices
+  normalImageCreditCost?: number
+  onCreditsUpdated?: (remainingCredits: number) => void
+  canGenerate?: () => boolean
+  onGenerateUnauthorized?: () => void
   helpers?: Partial<ImageEditorHelpers>
 }
 
@@ -74,6 +84,7 @@ export type ImageEditorController = {
   selectedImage: GalleryItem
   selectedGeneratedSlot: GeneratedSlot | null
   selectedAspectRatio: number
+  estimatedGenerateCredits: number
   isGenerateDisabled: boolean
   onPromptChange: (value: string) => void
   onGenerateCountChange: (count: number) => void
@@ -103,6 +114,7 @@ type ExecuteGenerateFlowOptions = {
 type ExecuteGenerateFlowResult = {
   generatedSlots: Array<GeneratedSlot>
   selectedId: string
+  remainingCredits: number | null
   payload: GenerateImagesPayload
 }
 
@@ -152,6 +164,10 @@ export async function executeGenerateFlow({
       upscaledSrc: null,
     })),
     selectedId: generatedIdFromIndex(0),
+    remainingCredits:
+      typeof response.remainingCredits === "number"
+        ? response.remainingCredits
+        : null,
     payload,
   }
 }
@@ -165,6 +181,7 @@ type ExecuteUpscaleFlowOptions = {
 type ExecuteUpscaleFlowResult = {
   generatedSlots: Array<GeneratedSlot>
   selectedId: string
+  remainingCredits: number | null
 }
 
 export async function executeUpscaleFlow({
@@ -203,6 +220,10 @@ export async function executeUpscaleFlow({
         : slot
     ),
     selectedId: selectedImage.id,
+    remainingCredits:
+      typeof response.remainingCredits === "number"
+        ? response.remainingCredits
+        : null,
   }
 }
 
@@ -211,6 +232,14 @@ type ExecuteDownloadFlowOptions = {
   filename: string
   downloadImage: ImageEditorServices["downloadImage"]
   base64ToBlob: ImageEditorHelpers["base64ToBlob"]
+}
+
+function isCreditsErrorMessage(message: string): boolean {
+  const lowerMessage = message.toLowerCase()
+  return (
+    lowerMessage.includes("insufficient credits") ||
+    lowerMessage.includes("credits error")
+  )
 }
 
 export async function executeDownloadFlow({
@@ -234,6 +263,10 @@ export async function executeDownloadFlow({
 export function useImageEditor({
   isDev,
   services,
+  normalImageCreditCost = 3,
+  onCreditsUpdated,
+  canGenerate,
+  onGenerateUnauthorized,
   helpers,
 }: UseImageEditorOptions): ImageEditorController {
   const resolvedFileToDataUrl = helpers?.fileToDataUrl ?? fileToDataUrl
@@ -301,6 +334,11 @@ export function useImageEditor({
     () => calculateAspectRatioValue(aspectRatio),
     [aspectRatio]
   )
+  const estimatedGenerateCredits = useMemo(() => {
+    const safeCount = clampGenerateCount(generateCount)
+    const safeUnitCost = Math.max(0, Math.floor(normalImageCreditCost))
+    return safeCount * safeUnitCost
+  }, [generateCount, normalImageCreditCost])
 
   const onPromptChange = useCallback((value: string) => {
     setPrompt(value)
@@ -359,6 +397,12 @@ export function useImageEditor({
   }, [])
 
   const onGenerate = useCallback(async () => {
+    if (canGenerate && !canGenerate()) {
+      setGenerateError("Please sign in to continue")
+      onGenerateUnauthorized?.()
+      return
+    }
+
     if (selectedImages.length === 0) {
       setGenerateError("Please select at least one input image")
       return
@@ -386,9 +430,22 @@ export function useImageEditor({
 
       setGeneratedSlots(result.generatedSlots)
       setSelectedId(result.selectedId)
+      if (typeof result.remainingCredits === "number") {
+        onCreditsUpdated?.(result.remainingCredits)
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image generation failed"
+      if (
+        message === "Please sign in to continue" ||
+        isCreditsErrorMessage(message)
+      ) {
+        setGeneratedSlots([])
+        setSelectedId(null)
+        if (message === "Please sign in to continue") {
+          onGenerateUnauthorized?.()
+        }
+      }
       setGenerateError(message)
     } finally {
       setIsGenerating(false)
@@ -398,9 +455,12 @@ export function useImageEditor({
     generateCount,
     isDev,
     isMockEnabled,
+    canGenerate,
+    onGenerateUnauthorized,
     prompt,
     selectedImages,
     services,
+    onCreditsUpdated,
   ])
 
   const onUpscale = useCallback(async () => {
@@ -415,6 +475,7 @@ export function useImageEditor({
     setIsUpscaling(true)
     setDownloadError(null)
     setUpscaleError(null)
+    setGenerateError(null)
 
     try {
       const result = await executeUpscaleFlow({
@@ -425,14 +486,21 @@ export function useImageEditor({
 
       setGeneratedSlots(result.generatedSlots)
       setSelectedId(result.selectedId)
+      if (typeof result.remainingCredits === "number") {
+        onCreditsUpdated?.(result.remainingCredits)
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image upscale failed"
-      setUpscaleError(message)
+      if (isCreditsErrorMessage(message)) {
+        setGenerateError(message)
+      } else {
+        setUpscaleError(message)
+      }
     } finally {
       setIsUpscaling(false)
     }
-  }, [generatedSlots, selectedImage, services])
+  }, [generatedSlots, onCreditsUpdated, selectedImage, services])
 
   const onDownloadImage = useCallback(
     async (imageUrl: string, filename: string) => {
@@ -477,6 +545,7 @@ export function useImageEditor({
     selectedImage,
     selectedGeneratedSlot,
     selectedAspectRatio,
+    estimatedGenerateCredits,
     isGenerateDisabled,
     onPromptChange,
     onGenerateCountChange,

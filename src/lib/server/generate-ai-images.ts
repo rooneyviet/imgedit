@@ -6,6 +6,14 @@
 import { createServerFn } from "@tanstack/react-start"
 import { runs, tasks } from "@trigger.dev/sdk"
 
+import { requireAuthenticatedUser } from "./auth"
+import {
+  CREDIT_OPERATION_CODES,
+  assertSufficientCredits,
+  calculateRequiredCredits,
+  chargeCreditsOnSuccess,
+  syncCreditsAndBillingCatalog,
+} from "./credits"
 import {
   GENERATE_REPLICATE_IMAGE_TASK_ID,
   type GenerateReplicateImagePayload,
@@ -22,10 +30,13 @@ type GenerateImagesRequest = Omit<
   count?: number
   mock?: boolean
   inputImagesDataUrlsOrUrls: string[]
+  accessToken: string
 }
 
 type GenerateImagesResponse = {
   images: string[]
+  chargedCredits: number
+  remainingCredits: number
 }
 
 const MAX_GENERATED_IMAGES = 8
@@ -81,6 +92,7 @@ function toRequest(input: unknown): GenerateImagesRequest {
   return {
     prompt,
     inputImagesDataUrlsOrUrls,
+    accessToken: (data.accessToken ?? "").trim(),
     count: data.count,
     mock: data.mock === true,
     goFast: data.goFast,
@@ -136,12 +148,35 @@ export const generateAiImages = createServerFn({ method: "POST" })
     }
 
     const input = toRequest(data)
+    await syncCreditsAndBillingCatalog()
+    const user = await requireAuthenticatedUser(input.accessToken)
     const count = Math.min(Math.max(input.count ?? 1, 1), MAX_GENERATED_IMAGES)
+    const requiredCredits = await calculateRequiredCredits([
+      {
+        code: CREDIT_OPERATION_CODES.NORMAL_IMAGE,
+        quantity: count,
+      },
+    ])
+
+    await assertSufficientCredits(user.id, requiredCredits)
 
     if (process.env.NODE_ENV === "development" && input.mock) {
       await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+      const chargeResult = await chargeCreditsOnSuccess({
+        profileId: user.id,
+        requiredCredits,
+        reason: "Generate normal images",
+        operationCode: CREDIT_OPERATION_CODES.NORMAL_IMAGE,
+        metadata: {
+          count,
+          mock: true,
+        },
+      })
+
       return {
         images: Array.from({ length: count }, () => MOCK_IMAGE_URL),
+        chargedCredits: requiredCredits,
+        remainingCredits: chargeResult.remainingCredits,
       }
     }
 
@@ -209,5 +244,20 @@ export const generateAiImages = createServerFn({ method: "POST" })
       images.push(extractRunOutputImageUrl(run.output))
     }
 
-    return { images }
+    const chargeResult = await chargeCreditsOnSuccess({
+      profileId: user.id,
+      requiredCredits,
+      reason: "Generate normal images",
+      operationCode: CREDIT_OPERATION_CODES.NORMAL_IMAGE,
+      metadata: {
+        count,
+        mock: false,
+      },
+    })
+
+    return {
+      images,
+      chargedCredits: requiredCredits,
+      remainingCredits: chargeResult.remainingCredits,
+    }
   })

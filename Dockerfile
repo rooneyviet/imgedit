@@ -10,6 +10,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
+ARG VITE_SUPABASE_AUTH_URL
+ENV VITE_SUPABASE_AUTH_URL=$VITE_SUPABASE_AUTH_URL
 COPY . .
 RUN pnpm run build && pnpm prune --prod
 

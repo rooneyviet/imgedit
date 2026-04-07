@@ -18,6 +18,7 @@ __unconfig*
 # Env and local config
 .env
 .env.*
+!.env.example
 *.local
 
 # Logs and coverage

@@ -6,13 +6,27 @@
 import { createServerFn } from "@tanstack/react-start"
 import { runs, tasks } from "@trigger.dev/sdk"
 
+import { requireAuthenticatedUser } from "./auth"
+import {
+  CREDIT_OPERATION_CODES,
+  assertSufficientCredits,
+  calculateRequiredCredits,
+  chargeCreditsOnSuccess,
+  syncCreditsAndBillingCatalog,
+} from "./credits"
 import {
   UPSCALE_REPLICATE_IMAGE_TASK_ID,
   type UpscaleReplicateImagePayload,
 } from "../../../trigger/upscale-image"
 
+type UpscaleImageRequest = UpscaleReplicateImagePayload & {
+  accessToken: string
+}
+
 type UpscaleImageResponse = {
   image: string
+  chargedCredits: number
+  remainingCredits: number
 }
 
 function getErrorMessage(error: unknown): string {
@@ -20,18 +34,22 @@ function getErrorMessage(error: unknown): string {
   return "Unknown error while upscaling image"
 }
 
-function toRequest(input: unknown): UpscaleReplicateImagePayload {
+function toRequest(input: unknown): UpscaleImageRequest {
   if (!input || typeof input !== "object") {
     throw new Error("Invalid request payload")
   }
 
-  const data = input as Partial<UpscaleReplicateImagePayload>
+  const data = input as Partial<UpscaleImageRequest>
   const image = (data.image ?? "").trim()
+  const accessToken = (data.accessToken ?? "").trim()
   if (!image) {
     throw new Error("Image is required")
   }
+  if (!accessToken) {
+    throw new Error("Access token is required")
+  }
 
-  return { image }
+  return { image, accessToken }
 }
 
 function extractRunOutputImageUrl(output: unknown): string {
@@ -48,21 +66,46 @@ function extractRunOutputImageUrl(output: unknown): string {
 }
 
 export const upscaleAiImage = createServerFn({ method: "POST" })
-  .inputValidator((input: UpscaleReplicateImagePayload) => input)
+  .inputValidator((input: UpscaleImageRequest) => input)
   .handler(async ({ data }): Promise<UpscaleImageResponse> => {
     if (!process.env.TRIGGER_SECRET_KEY) {
       throw new Error("Missing TRIGGER_SECRET_KEY")
     }
 
+    await syncCreditsAndBillingCatalog()
     const input = toRequest(data)
-    const handle = await tasks.trigger(UPSCALE_REPLICATE_IMAGE_TASK_ID, input)
+    const user = await requireAuthenticatedUser(input.accessToken)
+    const requiredCredits = await calculateRequiredCredits([
+      {
+        code: CREDIT_OPERATION_CODES.UPSCALE_4K,
+        quantity: 1,
+      },
+    ])
+
+    await assertSufficientCredits(user.id, requiredCredits)
+
+    const handle = await tasks.trigger(UPSCALE_REPLICATE_IMAGE_TASK_ID, {
+      image: input.image,
+    })
     const run = await runs.poll(handle.id, { pollIntervalMs: 1000 })
 
     if (!run.isSuccess) {
       throw new Error(getErrorMessage(run.error))
     }
 
+    const chargeResult = await chargeCreditsOnSuccess({
+      profileId: user.id,
+      requiredCredits,
+      reason: "Upscale image to 4K",
+      operationCode: CREDIT_OPERATION_CODES.UPSCALE_4K,
+      metadata: {
+        sourceImage: input.image,
+      },
+    })
+
     return {
       image: extractRunOutputImageUrl(run.output),
+      chargedCredits: requiredCredits,
+      remainingCredits: chargeResult.remainingCredits,
     }
   })
