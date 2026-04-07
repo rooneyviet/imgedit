@@ -152,6 +152,7 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
               onCheckedChange={(checked) =>
                 controller.onMockModeChange(checked === true)
               }
+              className="border-foreground/40 bg-background data-[state=checked]:border-primary data-[state=checked]:bg-primary"
             />
             <Label
               htmlFor="mock-mode"

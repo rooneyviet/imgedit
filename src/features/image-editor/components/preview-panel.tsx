@@ -8,6 +8,10 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react"
+import {
+  ReactCompareSlider,
+  ReactCompareSliderImage,
+} from "react-compare-slider"
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch"
 
 import { MAX_SLOTS } from "../helpers"
@@ -15,6 +19,7 @@ import type { ImageEditorController } from "../use-image-editor"
 import type { ReactZoomPanPinchContentRef } from "react-zoom-pan-pinch"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -27,6 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type PreviewPanelProps = {
@@ -40,10 +46,22 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
   const selectedImage = controller.selectedImage
   const selectedGeneratedSlot = controller.selectedGeneratedSlot
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false)
+  const [isCompareEnabled, setIsCompareEnabled] = useState(false)
   const [previewZoomPercent, setPreviewZoomPercent] = useState(100)
   const [fullscreenZoomPercent, setFullscreenZoomPercent] = useState(100)
   const previewZoomRef = useRef<ReactZoomPanPinchContentRef | null>(null)
   const fullscreenZoomRef = useRef<ReactZoomPanPinchContentRef | null>(null)
+  const canShowCompareControl =
+    selectedImage.status === "ready" && selectedImage.isUpscaled
+  const hasCompareImages =
+    Boolean(selectedGeneratedSlot?.generatedSrc) &&
+    Boolean(selectedGeneratedSlot?.upscaledSrc)
+  const isCompareZoomCompatible = previewZoomPercent === 100
+  const showCompareSlider =
+    canShowCompareControl &&
+    hasCompareImages &&
+    isCompareZoomCompatible &&
+    isCompareEnabled
 
   useEffect(() => {
     setPreviewZoomPercent(100)
@@ -58,6 +76,14 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
     setFullscreenZoomPercent(100)
     fullscreenZoomRef.current?.resetTransform(0)
   }, [isFullscreenOpen, selectedImage.src])
+
+  useEffect(() => {
+    if (canShowCompareControl) {
+      return
+    }
+
+    setIsCompareEnabled(false)
+  }, [canShowCompareControl])
 
   const canZoomImage =
     Boolean(selectedImage.src) && selectedImage.status !== "loading"
@@ -87,7 +113,25 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
             </Button>
           ) : null}
 
-          {selectedImage.status === "ready" && selectedImage.isUpscaled ? (
+          {canShowCompareControl ? (
+            <Label
+              htmlFor="compare-mode"
+              className="inline-flex h-8 items-center gap-2 rounded-md border border-border/70 bg-secondary px-3 font-mono text-[10px] font-bold tracking-wide text-foreground uppercase"
+            >
+              <Checkbox
+                id="compare-mode"
+                checked={isCompareEnabled}
+                onCheckedChange={(checked) => {
+                  setIsCompareEnabled(checked === true)
+                }}
+                disabled={!isCompareZoomCompatible}
+                className="rounded-xs border-foreground/40 bg-background data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+              />
+              Compare
+            </Label>
+          ) : null}
+
+          {canShowCompareControl ? (
             <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white uppercase">
               UPSCALED
             </span>
@@ -222,16 +266,16 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
         </div>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-0">
-        <div className="relative h-[52vh] w-full">
+      <div className="relative flex h-150 items-center justify-center overflow-hidden p-0">
+        <div
+          className="relative h-full w-auto"
+          style={{ aspectRatio: controller.selectedAspectRatio }}
+        >
           <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--border))_1px,transparent_1px)] bg-size-[24px_24px] opacity-30" />
           <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden border border-border/30 bg-transparent shadow-[0_40px_100px_rgba(167,0,112,0.12)]">
             {selectedImage.status === "loading" ? (
               <div className="grid h-full w-full place-items-center">
-                <div
-                  className="h-full max-w-full"
-                  style={{ aspectRatio: controller.selectedAspectRatio }}
-                >
+                <div className="h-full w-full">
                   <Skeleton className="h-full w-full bg-zinc-300/70" />
                 </div>
               </div>
@@ -253,12 +297,53 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   wrapperClass="!h-full !w-full"
                   contentClass="!flex !h-full !w-full !items-center !justify-center"
                 >
-                  <img
-                    src={selectedImage.src}
-                    alt={selectedImage.label}
-                    className="h-full w-full object-contain select-none"
-                    draggable={false}
-                  />
+                  {showCompareSlider &&
+                  selectedGeneratedSlot?.generatedSrc &&
+                  selectedGeneratedSlot?.upscaledSrc ? (
+                    <div className="relative h-full w-full">
+                      <ReactCompareSlider
+                        itemOne={
+                          <ReactCompareSliderImage
+                            src={selectedGeneratedSlot.generatedSrc}
+                            alt={`${selectedImage.label} generated`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        }
+                        itemTwo={
+                          <ReactCompareSliderImage
+                            src={selectedGeneratedSlot.upscaledSrc}
+                            alt={`${selectedImage.label} upscaled`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        }
+                        style={{ width: "100%", height: "100%" }}
+                      />
+
+                      <div className="pointer-events-none absolute inset-x-2 top-2 z-20 flex items-center justify-between">
+                        <span className="rounded-md bg-black/65 px-2 py-1 font-mono text-[9px] font-bold tracking-wide text-white">
+                          Before upscale
+                        </span>
+                        <span className="rounded-md bg-black/65 px-2 py-1 font-mono text-[9px] font-bold tracking-wide text-white">
+                          After upscale
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={selectedImage.src}
+                      alt={selectedImage.label}
+                      className="h-full w-full object-contain select-none"
+                      draggable={false}
+                    />
+                  )}
                 </TransformComponent>
               </TransformWrapper>
             ) : (
@@ -392,9 +477,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 variant="outline"
                 onClick={() => controller.onSelectGeneratedImage(item.id)}
                 className={`group relative h-full w-27.5 shrink-0 overflow-hidden rounded-none p-0 ${
-                  active
-                    ? "border-primary ring-2 ring-primary/30"
-                    : "border-border/60"
+                  active ? "border-primary" : "border-border/60"
                 }`}
               >
                 {item.src ? (

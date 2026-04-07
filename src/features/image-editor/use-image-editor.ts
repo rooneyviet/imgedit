@@ -234,8 +234,12 @@ type ExecuteDownloadFlowOptions = {
   base64ToBlob: ImageEditorHelpers["base64ToBlob"]
 }
 
-function isInsufficientCreditsMessage(message: string): boolean {
-  return message.toLowerCase().startsWith("insufficient credits")
+function isCreditsErrorMessage(message: string): boolean {
+  const lowerMessage = message.toLowerCase()
+  return (
+    lowerMessage.includes("insufficient credits") ||
+    lowerMessage.includes("credits error")
+  )
 }
 
 export async function executeDownloadFlow({
@@ -432,10 +436,15 @@ export function useImageEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image generation failed"
-      if (message === "Please sign in to continue") {
+      if (
+        message === "Please sign in to continue" ||
+        isCreditsErrorMessage(message)
+      ) {
         setGeneratedSlots([])
         setSelectedId(null)
-        onGenerateUnauthorized?.()
+        if (message === "Please sign in to continue") {
+          onGenerateUnauthorized?.()
+        }
       }
       setGenerateError(message)
     } finally {
@@ -483,7 +492,7 @@ export function useImageEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Image upscale failed"
-      if (isInsufficientCreditsMessage(message)) {
+      if (isCreditsErrorMessage(message)) {
         setGenerateError(message)
       } else {
         setUpscaleError(message)
