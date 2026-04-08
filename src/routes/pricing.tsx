@@ -32,7 +32,7 @@ function formatUsd(cents: number): string {
   }).format(cents / 100)
 }
 
-export function PricingPage() {
+function PricingPage() {
   const { data: pricing } = useSuspenseQuery(createPricingPageQueryOptions())
 
   const singleFullEditCredits =
@@ -152,7 +152,7 @@ export function PricingPage() {
 
             <Button
               type="button"
-              className="h-auto rounded-none bg-gradient-to-br from-[#a70070] to-[#d3008e] py-4 font-mono text-xs font-bold tracking-[0.2em] text-white uppercase transition-colors hover:from-[#8e005f] hover:to-[#b6007a]"
+              className="h-auto rounded-none bg-linear-to-br from-[#a70070] to-[#d3008e] py-4 font-mono text-xs font-bold tracking-[0.2em] text-white uppercase transition-colors hover:from-[#8e005f] hover:to-[#b6007a]"
             >
               CHOOSE MONTHLY PLAN
             </Button>
