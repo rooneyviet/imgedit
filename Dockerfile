@@ -8,7 +8,7 @@ RUN corepack enable
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 FROM deps AS build
 ARG VITE_SUPABASE_AUTH_URL
 ENV VITE_SUPABASE_AUTH_URL=$VITE_SUPABASE_AUTH_URL
