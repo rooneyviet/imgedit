@@ -22,4 +22,5 @@ else
 fi
 
 docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+docker compose -f docker-compose.prod.yml run --rm app sh -lc "corepack enable && pnpm exec prisma migrate deploy"
 docker image prune -f

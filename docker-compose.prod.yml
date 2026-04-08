@@ -139,6 +139,8 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
       AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
       NEXT_PUBLIC_ENABLE_LOGS: false
+      SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
+      VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
 
   app:
     container_name: imgedit-app
@@ -146,7 +148,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_SUPABASE_AUTH_URL: ${VITE_SUPABASE_AUTH_URL:-}
+        VITE_SUPABASE_AUTH_URL: ${VITE_SUPABASE_AUTH_URL:-http://localhost:9999}
     image: imgedit:latest
     restart: unless-stopped
     env_file:
