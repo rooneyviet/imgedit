@@ -1,9 +1,17 @@
 import { Check, Coins } from "lucide-react"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Button } from "@/components/ui/button"
+import {
+  createPricingCatalogQueryOptions,
+  createPricingPageQueryOptions,
+} from "@/features/pricing/infrastructure/pricing.queries"
 
 export const Route = createFileRoute("/pricing")({
+  loader: ({ context }) => {
+    return context.queryClient.ensureQueryData(createPricingCatalogQueryOptions())
+  },
   component: PricingPage,
 })
 
@@ -13,7 +21,23 @@ const sharedFeatures = [
   "COMMERCIAL LICENSE",
 ] as const
 
+function formatUsd(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100)
+}
+
 export function PricingPage() {
+  const { data: pricing } = useSuspenseQuery(createPricingPageQueryOptions())
+
+  const singleFullEditCredits =
+    pricing.operationCosts.normalImage +
+    pricing.operationCosts.styleApplied +
+    pricing.operationCosts.upscale4k
+
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-[#f9f9f9] text-[#1a1c1c]">
       <main className="mx-auto max-w-7xl px-6 pt-8 pb-12">
@@ -33,10 +57,12 @@ export function PricingPage() {
           <article className="flex flex-col border-r border-b border-black/10 bg-stone-100 p-8 transition-colors hover:bg-stone-200 md:col-span-4">
             <div className="mb-4 h-32">
               <h2 className="mb-2 font-heading text-2xl font-bold tracking-tight uppercase">
-                Free
+                {pricing.freePlan.label}
               </h2>
               <div className="flex items-baseline gap-1">
-                <span className="font-heading text-5xl font-black">$0</span>
+                <span className="font-heading text-5xl font-black">
+                  {formatUsd(pricing.freePlan.priceCents)}
+                </span>
                 <span className="text-sm text-stone-600">/MONTH</span>
               </div>
             </div>
@@ -46,7 +72,7 @@ export function PricingPage() {
                 <Coins size={18} className="mt-0.5 text-[#a70070]" />
                 <div>
                   <p className="font-mono text-sm font-bold tracking-wide uppercase">
-                    10 CREDITS / MONTH
+                    {pricing.freePlan.monthlyCredits} CREDITS / MONTH
                   </p>
                   <p className="font-mono text-[10px] tracking-[0.15em] text-stone-600 uppercase">
                     REFRESHES EVERY 30 DAYS
@@ -83,11 +109,11 @@ export function PricingPage() {
 
             <div className="mb-4 h-32">
               <h2 className="mb-2 font-heading text-2xl font-bold tracking-tight uppercase">
-                MONTHLY
+                {pricing.monthlyPlan.label}
               </h2>
               <div className="flex items-baseline gap-1">
                 <span className="font-heading text-5xl font-black text-[#a70070]">
-                  $4.49
+                  {formatUsd(pricing.monthlyPlan.priceCents)}
                 </span>
                 <span className="text-sm text-stone-600">/MONTH</span>
               </div>
@@ -101,7 +127,7 @@ export function PricingPage() {
                 />
                 <div>
                   <p className="font-mono text-sm font-bold tracking-wide uppercase">
-                    50 CREDITS / MONTH
+                    {pricing.monthlyPlan.monthlyCredits} CREDITS / MONTH
                   </p>
                   <p className="font-mono text-[10px] tracking-[0.15em] text-stone-600 uppercase">
                     REFRESHES EVERY 30 DAYS
@@ -137,17 +163,17 @@ export function PricingPage() {
 
             <div className="mb-4 h-32">
               <h2 className="mb-2 font-heading text-2xl font-bold tracking-tight text-[#ffd8e7] uppercase">
-                ANNUALLY
+                {pricing.annualPlan.label}
               </h2>
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-1">
                   <span className="font-heading text-5xl font-black">
-                    $19.99
+                    {formatUsd(pricing.annualPlan.priceCents)}
                   </span>
                   <span className="text-sm text-white/60">/YEAR</span>
                 </div>
                 <span className="mt-1 font-mono text-xs font-bold tracking-wider text-[#a3f876] uppercase">
-                  ONLY ~$1.67 / MONTH
+                  ONLY ~{formatUsd(pricing.annualEquivalentMonthlyPriceCents)} / MONTH
                 </span>
               </div>
             </div>
@@ -160,7 +186,7 @@ export function PricingPage() {
                 />
                 <div>
                   <p className="font-mono text-sm font-bold tracking-wide uppercase">
-                    1000 CREDITS / MONTH
+                    {pricing.annualPlan.monthlyCredits} CREDITS / MONTH
                   </p>
                   <p className="font-mono text-[10px] tracking-[0.15em] text-white/60 uppercase">
                     REFRESHES EVERY 30 DAYS
@@ -203,7 +229,7 @@ export function PricingPage() {
                     1 NORMAL IMAGE
                   </span>
                   <span className="font-heading text-xl font-black text-[#a70070]">
-                    3 CREDITS
+                    {pricing.operationCosts.normalImage} CREDITS
                   </span>
                 </div>
                 <div className="flex items-center justify-between border-b-2 border-black/10 pb-4">
@@ -211,7 +237,7 @@ export function PricingPage() {
                     1 4K UPSCALE
                   </span>
                   <span className="font-heading text-xl font-black text-[#a70070]">
-                    2 CREDITS
+                    {pricing.operationCosts.upscale4k} CREDITS
                   </span>
                 </div>
                 <div className="flex items-center justify-between border-b-2 border-black/10 pb-4">
@@ -219,7 +245,7 @@ export function PricingPage() {
                     1 STYLE APPLIED
                   </span>
                   <span className="font-heading text-xl font-black text-[#a70070]">
-                    1 CREDIT
+                    {pricing.operationCosts.styleApplied} CREDIT
                   </span>
                 </div>
               </div>
@@ -231,7 +257,9 @@ export function PricingPage() {
                   </p>
                   <p className="font-mono text-lg leading-tight font-bold uppercase">
                     GENERATE 1 NORMAL IMAGE + 1 STYLE + 4K UPSCALE ={" "}
-                    <span className="text-[#a70070]">6 CREDITS TOTAL</span>
+                    <span className="text-[#a70070]">
+                      {singleFullEditCredits} CREDITS TOTAL
+                    </span>
                   </p>
                 </div>
                 <div>
@@ -240,7 +268,9 @@ export function PricingPage() {
                   </p>
                   <p className="font-mono text-lg leading-tight font-bold uppercase">
                     GENERATE 2 IMAGES WITH THE SAME SETTINGS ={" "}
-                    <span className="text-[#a70070]">12 CREDITS</span>
+                    <span className="text-[#a70070]">
+                      {singleFullEditCredits * 2} CREDITS
+                    </span>
                   </p>
                 </div>
               </div>
@@ -257,21 +287,6 @@ export function PricingPage() {
           <p className="mt-2 font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
             © 2024 IMG EDIT. ALL RIGHTS RESERVED.
           </p>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-8">
-          <span className="font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            PRIVACY
-          </span>
-          <span className="font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            TERMS
-          </span>
-          <span className="font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            API
-          </span>
-          <span className="font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            STATUS
-          </span>
         </div>
       </footer>
     </div>
