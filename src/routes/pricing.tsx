@@ -249,6 +249,7 @@ export function PricingPage() {
                   </span>
                   <span className="font-heading text-xl font-black text-[#a70070]">
                     {pricing.operationCosts.styleApplied} CREDIT
+                    {pricing.operationCosts.styleApplied === 1 ? "" : "S"}
                   </span>
                 </div>
               </div>

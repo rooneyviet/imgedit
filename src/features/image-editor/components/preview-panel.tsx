@@ -34,6 +34,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type PreviewPanelProps = {
   controller: ImageEditorController
@@ -87,6 +93,9 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
 
   const canZoomImage =
     Boolean(selectedImage.src) && selectedImage.status !== "loading"
+  const upscaleCreditsLabel = `${controller.upscale4kCreditCost} credit${
+    controller.upscale4kCreditCost === 1 ? "" : "s"
+  }`
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -100,17 +109,26 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           {selectedImage.status === "ready" && !selectedImage.isUpscaled ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={controller.onUpscale}
-              disabled={controller.isUpscaling || controller.isGenerating}
-              className="h-8 font-mono text-[10px] tracking-wide"
-            >
-              <ImageUpscale size={14} />
-              {controller.isUpscaling ? "Upscaling..." : "Upscale"}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={controller.onUpscale}
+                    disabled={controller.isUpscaling || controller.isGenerating}
+                    className="h-8 font-mono text-[10px] tracking-wide"
+                  >
+                    <ImageUpscale size={14} />
+                    {controller.isUpscaling ? "Upscaling..." : "Upscale"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={6}>
+                  cost {upscaleCreditsLabel}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : null}
 
           {canShowCompareControl ? (

@@ -32,6 +32,7 @@ export type UseImageEditorControllerOptions = {
   isDev: boolean
   services: ImageEditorServices
   normalImageCreditCost?: number
+  upscale4kCreditCost?: number
   onCreditsUpdated?: (remainingCredits: number) => void
   canGenerate?: () => boolean
   onGenerateUnauthorized?: () => void
@@ -59,6 +60,7 @@ export type ImageEditorController = {
   selectedGeneratedSlot: GeneratedSlot | null
   selectedAspectRatio: number
   estimatedGenerateCredits: number
+  upscale4kCreditCost: number
   isGenerateDisabled: boolean
   onPromptChange: (value: string) => void
   onGenerateCountChange: (count: number) => void
@@ -78,7 +80,8 @@ const DEFAULT_ASPECT_RATIO = ASPECT_RATIO_OPTIONS[0]
 export function useImageEditorController({
   isDev,
   services,
-  normalImageCreditCost = 3,
+  normalImageCreditCost = 0,
+  upscale4kCreditCost = 0,
   onCreditsUpdated,
   canGenerate,
   onGenerateUnauthorized,
@@ -364,6 +367,7 @@ export function useImageEditorController({
     selectedGeneratedSlot,
     selectedAspectRatio,
     estimatedGenerateCredits,
+    upscale4kCreditCost,
     isGenerateDisabled,
     onPromptChange,
     onGenerateCountChange,

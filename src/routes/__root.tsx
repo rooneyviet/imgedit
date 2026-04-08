@@ -24,6 +24,7 @@ import {
   createAuthProfileSnapshotQueryOptions,
   updateCachedRemainingCredits,
 } from "@/features/auth/infrastructure/auth-profile.queries"
+import { createPricingCatalogQueryOptions } from "@/features/pricing/infrastructure/pricing.queries"
 import type { AppRouterContext } from "@/router"
 import { syncUserProfile } from "@/lib/server/sync-user-profile"
 
@@ -70,6 +71,7 @@ function RootLayout() {
     }),
     enabled: Boolean(auth.accessToken),
   })
+  const pricingCatalogQuery = useQuery(createPricingCatalogQueryOptions())
 
   useEffect(() => {
     if (!profileSnapshotQuery.error || !isDev) {
@@ -92,11 +94,14 @@ function RootLayout() {
   }, [auth])
 
   const profileSnapshot = auth.accessToken ? (profileSnapshotQuery.data ?? null) : null
+  const operationCosts = pricingCatalogQuery.data?.operationCosts
 
   const userDisplayName = profileSnapshot?.userDisplayName ?? auth.userDisplayName
   const userEmail = profileSnapshot?.userEmail ?? auth.userEmail
   const remainingCredits = profileSnapshot?.remainingCredits ?? null
-  const normalImageCreditCost = profileSnapshot?.normalImageCreditCost ?? 3
+  const normalImageCreditCost =
+    profileSnapshot?.normalImageCreditCost ?? operationCosts?.normalImage ?? 0
+  const upscale4kCreditCost = operationCosts?.upscale4k ?? 0
   const userLabel = userDisplayName || userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
 
   const setRemainingCredits = useCallback(
@@ -117,6 +122,7 @@ function RootLayout() {
       userEmail,
       remainingCredits,
       normalImageCreditCost,
+      upscale4kCreditCost,
       setRemainingCredits,
       openLoginDialog,
     }),
@@ -126,6 +132,7 @@ function RootLayout() {
       openLoginDialog,
       remainingCredits,
       setRemainingCredits,
+      upscale4kCreditCost,
       userDisplayName,
       userEmail,
     ]

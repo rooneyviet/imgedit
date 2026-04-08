@@ -20,6 +20,7 @@ function App() {
     isDev,
     services,
     normalImageCreditCost: auth.normalImageCreditCost,
+    upscale4kCreditCost: auth.upscale4kCreditCost,
     onCreditsUpdated: auth.setRemainingCredits,
     canGenerate: () => Boolean(auth.accessToken),
     onGenerateUnauthorized: auth.openLoginDialog,
