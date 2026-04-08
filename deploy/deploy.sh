@@ -21,6 +21,6 @@ else
   git pull --ff-only origin "$BRANCH"
 fi
 
-docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
-docker compose -f docker-compose.prod.yml run --rm app sh -lc "corepack enable && pnpm dlx prisma migrate deploy"
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build --remove-orphans
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm app sh -lc "corepack enable && pnpm dlx prisma migrate deploy"
 docker image prune -f
