@@ -55,6 +55,8 @@ services:
     depends_on:
       supabase-db:
         condition: service_healthy
+    ports:
+      - "${SUPABASE_AUTH_PORT:-9999}:9999"
     healthcheck:
       test:
         [
@@ -139,8 +141,6 @@ services:
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
       AUTH_JWT_SECRET: ${SUPABASE_JWT_SECRET:-super-secret-jwt-token-min-32-characters}
       NEXT_PUBLIC_ENABLE_LOGS: false
-      SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
-      VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
 
   app:
     container_name: imgedit-app
@@ -153,6 +153,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
+    environment:
+      DATABASE_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
+      DIRECT_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
+      SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
+      VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
     ports:
       - "127.0.0.1:3030:3030"
 
