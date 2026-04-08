@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { CircleHelp, Settings } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   HeadContent,
   Outlet,
   Scripts,
-  createRootRoute,
+  createRootRouteWithContext,
   useRouterState,
 } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
@@ -19,9 +20,14 @@ import { Button } from "@/components/ui/button"
 import { AppAuthProvider } from "@/features/auth/app-auth-context"
 import { AuthDialog } from "@/features/auth/auth-dialog"
 import { useAuth } from "@/features/auth/use-auth"
+import {
+  createAuthProfileSnapshotQueryOptions,
+  updateCachedRemainingCredits,
+} from "@/features/auth/infrastructure/auth-profile.queries"
+import type { AppRouterContext } from "@/router"
 import { syncUserProfile } from "@/lib/server/sync-user-profile"
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<AppRouterContext>()({
   head: () => ({
     meta: [
       {
@@ -46,58 +52,32 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
-type SyncedProfile = {
-  id: string
-  email: string | null
-  displayName: string | null
-  remainingCredits: number
-  normalImageCredits: number
-}
-
 function RootLayout() {
   const isDev = import.meta.env.DEV
+  const queryClient = useQueryClient()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
   const activeTab = pathname === "/pricing" ? "pricing" : "gallery"
   const auth = useAuth()
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
-  const [syncedProfile, setSyncedProfile] = useState<SyncedProfile | null>(null)
-  const lastSyncedTokenRef = useRef<string | null>(null)
   const syncUserProfileServerFn = useServerFn(syncUserProfile)
 
+  const profileSnapshotQuery = useQuery({
+    ...createAuthProfileSnapshotQueryOptions({
+      accessToken: auth.accessToken ?? "",
+      syncUserProfile: syncUserProfileServerFn,
+    }),
+    enabled: Boolean(auth.accessToken),
+  })
+
   useEffect(() => {
-    const accessToken = auth.accessToken
-    if (!accessToken) {
-      lastSyncedTokenRef.current = null
-      setSyncedProfile(null)
+    if (!profileSnapshotQuery.error || !isDev) {
       return
     }
 
-    if (lastSyncedTokenRef.current === accessToken) {
-      return
-    }
-
-    void syncUserProfileServerFn({
-      data: {
-        accessToken,
-      },
-    })
-      .then((result) => {
-        lastSyncedTokenRef.current = accessToken
-        setSyncedProfile({
-          ...result.profile,
-          normalImageCredits: result.pricing.normalImageCredits,
-        })
-      })
-      .catch((error) => {
-        lastSyncedTokenRef.current = null
-        if (isDev) {
-          console.warn("Failed to sync user profile", error)
-        }
-        setSyncedProfile(null)
-      })
-  }, [auth.accessToken, isDev, syncUserProfileServerFn])
+    console.warn("Failed to sync user profile", profileSnapshotQuery.error)
+  }, [isDev, profileSnapshotQuery.error])
 
   useEffect(() => {
     if (auth.isAuthenticated) {
@@ -111,24 +91,24 @@ function RootLayout() {
     setIsAuthDialogOpen(true)
   }, [auth])
 
-  const userDisplayName = syncedProfile?.displayName ?? auth.userDisplayName
-  const userEmail = syncedProfile?.email ?? auth.userEmail
-  const remainingCredits = syncedProfile?.remainingCredits ?? null
-  const normalImageCreditCost = syncedProfile?.normalImageCredits ?? 3
+  const profileSnapshot = auth.accessToken ? (profileSnapshotQuery.data ?? null) : null
+
+  const userDisplayName = profileSnapshot?.userDisplayName ?? auth.userDisplayName
+  const userEmail = profileSnapshot?.userEmail ?? auth.userEmail
+  const remainingCredits = profileSnapshot?.remainingCredits ?? null
+  const normalImageCreditCost = profileSnapshot?.normalImageCreditCost ?? 3
   const userLabel = userDisplayName || userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
 
-  const setRemainingCredits = useCallback((nextRemainingCredits: number) => {
-    setSyncedProfile((previous) => {
-      if (!previous) {
-        return previous
-      }
-
-      return {
-        ...previous,
-        remainingCredits: Math.max(0, Math.floor(nextRemainingCredits)),
-      }
-    })
-  }, [])
+  const setRemainingCredits = useCallback(
+    (nextRemainingCredits: number) => {
+      updateCachedRemainingCredits({
+        queryClient,
+        accessToken: auth.accessToken,
+        remainingCredits: nextRemainingCredits,
+      })
+    },
+    [auth.accessToken, queryClient]
+  )
 
   const authContextValue = useMemo(
     () => ({
