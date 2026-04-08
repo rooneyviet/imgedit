@@ -21,21 +21,21 @@ export function TopHeaderAuthControls({
     return (
       <>
         <div className="hidden items-center gap-2 md:flex">
-          <div className="border border-border bg-muted px-2 py-1 text-[10px] font-semibold tracking-wide uppercase">
+          <div className="border border-border bg-muted px-2 py-1 text-[10px] font-semibold tracking-wide">
             {userLabel}
           </div>
-          <div className="border border-primary/60 bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold tracking-wide text-primary uppercase">
-            {remainingCredits ?? 0} CREDITS
+          <div className="border border-primary/60 bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold tracking-wide text-primary">
+            {remainingCredits ?? 0} credits
           </div>
         </div>
         <Button
           type="button"
           size="sm"
           variant="secondary"
-          className="pointer-events-auto h-8 px-2 font-mono text-[10px] tracking-wider uppercase"
+          className="pointer-events-auto h-8 px-2 font-mono text-[10px] tracking-wider"
           onClick={onLogout}
         >
-          LOGOUT
+          Log Out
         </Button>
       </>
     )
@@ -46,10 +46,10 @@ export function TopHeaderAuthControls({
       type="button"
       size="sm"
       variant="default"
-      className="h-8 px-2 font-mono text-[10px] tracking-wider uppercase"
+      className="h-8 px-2 font-mono text-[10px] tracking-wider"
       onClick={onOpenLogin}
     >
-      {isLoadingSession ? "AUTH_CHECK" : "SIGN_IN"}
+      {isLoadingSession ? "Checking Auth..." : "Sign In"}
     </Button>
   )
 }

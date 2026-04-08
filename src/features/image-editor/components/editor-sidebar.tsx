@@ -1,6 +1,10 @@
 import { Terminal, WandSparkles } from "lucide-react"
 
-import { ASPECT_RATIO_OPTIONS, GENERATE_COUNT_OPTIONS } from "../helpers"
+import {
+  ASPECT_RATIO_OPTIONS,
+  GENERATE_COUNT_OPTIONS,
+  calculateAspectRatioValue,
+} from "../helpers"
 import { InputImageSlot } from "./input-image-slot"
 import type { ImageEditorController } from "../use-image-editor"
 
@@ -20,20 +24,26 @@ type EditorSidebarProps = {
   controller: ImageEditorController
 }
 
-const QUICK_ASPECT_RATIOS = ["1:1", "4:3", "16:9"] as const
-
 export function EditorSidebar({ controller }: EditorSidebarProps) {
   type AspectRatioOption = (typeof ASPECT_RATIO_OPTIONS)[number]
 
-  const isQuickRatioActive = (ratio: string) => controller.aspectRatio === ratio
+  const isAspectRatioActive = (ratio: AspectRatioOption) =>
+    controller.aspectRatio === ratio
+
+  const getAspectRatioButtonWidth = (ratio: AspectRatioOption): number => {
+    const BUTTON_HEIGHT_PX = 40
+    const MIN_BUTTON_WIDTH_PX = 24
+    const width = calculateAspectRatioValue(ratio) * BUTTON_HEIGHT_PX
+    return Math.max(MIN_BUTTON_WIDTH_PX, Math.round(width))
+  }
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto px-5 py-6 sm:px-6">
+    <div className="flex h-full flex-col gap-6 overflow-y-auto px-5 py-4 sm:px-6">
       <section>
-        <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
-          INPUT_IMAGES
+        <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] text-muted-foreground">
+          Input Images
         </h2>
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-3 gap-2">
           {controller.slots.map((slot, index) => (
             <InputImageSlot
               key={`slot-${index + 1}`}
@@ -48,9 +58,9 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
       </section>
 
       <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
-            PROMPT_ENGINE
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] text-muted-foreground">
+            Prompt
           </h2>
           <Terminal size={14} className="text-muted-foreground" />
         </div>
@@ -65,12 +75,12 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
       </section>
 
       <section className="space-y-6">
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Label
             htmlFor="count"
-            className="font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase"
+            className="font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground"
           >
-            NUM_IMAGES
+            Number of Images
           </Label>
           <Select
             value={String(controller.generateCount)}
@@ -98,50 +108,24 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           </Select>
         </div>
 
-        <div className="space-y-3">
-          <Label className="font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
-            ASPECT_RATIO
+        <div className="space-y-2">
+          <Label className="font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
+            Aspect Ratio
           </Label>
-          <div className="grid grid-cols-3 gap-1">
-            {QUICK_ASPECT_RATIOS.map((ratio) => (
+          <div className="flex flex-wrap items-center gap-1">
+            {ASPECT_RATIO_OPTIONS.map((ratio) => (
               <Button
                 key={ratio}
                 type="button"
-                variant={isQuickRatioActive(ratio) ? "default" : "secondary"}
-                onClick={() =>
-                  controller.onAspectRatioChange(ratio as AspectRatioOption)
-                }
-                className="h-8 font-mono text-[10px] tracking-wider"
+                variant={isAspectRatioActive(ratio) ? "default" : "secondary"}
+                onClick={() => controller.onAspectRatioChange(ratio)}
+                className="h-10 px-0 font-mono text-[9px] tracking-normal"
+                style={{ width: `${getAspectRatioButtonWidth(ratio)}px` }}
               >
                 {ratio}
               </Button>
             ))}
           </div>
-
-          <Select
-            value={controller.aspectRatio}
-            onValueChange={(value) =>
-              controller.onAspectRatioChange(value as AspectRatioOption)
-            }
-          >
-            <SelectTrigger
-              id="aspect-ratio"
-              className="h-9 bg-secondary/50 font-mono text-[10px] tracking-widest"
-            >
-              <SelectValue placeholder="All ratios" />
-            </SelectTrigger>
-            <SelectContent>
-              {ASPECT_RATIO_OPTIONS.map((ratio) => (
-                <SelectItem
-                  key={ratio}
-                  value={ratio}
-                  className="font-mono text-xs"
-                >
-                  {ratio}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {controller.isDev ? (
@@ -156,9 +140,9 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
             />
             <Label
               htmlFor="mock-mode"
-              className="font-mono text-[10px] tracking-[0.15em] uppercase"
+              className="font-mono text-[10px] tracking-[0.15em]"
             >
-              MOCK_MODE
+              Mock Mode
             </Label>
           </div>
         ) : null}
@@ -169,14 +153,14 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           type="button"
           onClick={controller.onGenerate}
           disabled={controller.isGenerateDisabled}
-          className={`h-12 w-full gap-2 font-mono text-xs font-bold tracking-[0.2em] uppercase ${
+          className={`h-12 w-full gap-2 font-mono text-xs font-bold tracking-[0.2em] ${
             controller.isGenerateDisabled
               ? "border border-border bg-zinc-200 text-zinc-500 shadow-none hover:opacity-100"
               : "bg-linear-to-br from-primary to-fuchsia-500 text-primary-foreground hover:opacity-90"
           }`}
         >
           {controller.isGenerating ? (
-            "GENERATING..."
+            "Generating..."
           ) : (
             <span className="flex flex-col items-center leading-tight">
               <span className="text-base">GENERATE</span>

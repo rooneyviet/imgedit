@@ -15,7 +15,7 @@ type ImageEditorPageProps = {
 
 export function ImageEditorPage({ controller, auth }: ImageEditorPageProps) {
   const userLabel =
-    auth.userDisplayName || auth.userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
+    auth.userDisplayName || auth.userEmail || (auth.isAuthenticated ? "User" : "Guest")
 
   return (
     <div className="flex min-h-[calc(100svh-4rem)] flex-col bg-background text-foreground">
@@ -28,17 +28,17 @@ export function ImageEditorPage({ controller, auth }: ImageEditorPageProps) {
         </section>
       </main>
 
-      <footer className="flex h-8 items-center justify-between border-t border-border/70 bg-zinc-950 px-4 text-[9px] tracking-[0.2em] text-zinc-400 uppercase sm:px-6">
+      <footer className="flex h-8 items-center justify-between border-t border-border/70 bg-zinc-950 px-4 text-[9px] tracking-[0.2em] text-zinc-400 sm:px-6">
         <div className="flex items-center gap-4 sm:gap-6">
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 bg-emerald-500" />
-            ENGINE_READY
+            Engine ready
           </span>
-          <span className="hidden sm:inline">LATENCY: 142MS</span>
+          <span className="hidden sm:inline">Latency: 142ms</span>
           <span className="hidden md:inline">CPU: 12%</span>
         </div>
         <div className="flex items-center gap-3 text-zinc-300">
-          <span>USER: {userLabel.toUpperCase()}</span>
+          <span>User: {userLabel}</span>
           <Database size={10} />
         </div>
       </footer>

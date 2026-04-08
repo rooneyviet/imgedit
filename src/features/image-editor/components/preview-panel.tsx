@@ -93,7 +93,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
       <div className="flex min-h-12 items-center justify-between border-b border-border/60 bg-card px-4 sm:px-6">
         <div className="hidden items-center gap-6 font-mono text-[10px] font-bold tracking-wider text-muted-foreground md:flex">
           <div className="flex items-center gap-2">
-            <span className="text-primary">ZOOM:</span>
+            <span className="text-primary">Zoom:</span>
             <span className="text-foreground">{previewZoomPercent}%</span>
           </div>
         </div>
@@ -106,17 +106,17 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
               variant="secondary"
               onClick={controller.onUpscale}
               disabled={controller.isUpscaling || controller.isGenerating}
-              className="h-8 font-mono text-[10px] tracking-wide uppercase"
+              className="h-8 font-mono text-[10px] tracking-wide"
             >
               <ImageUpscale size={14} />
-              {controller.isUpscaling ? "UPSCALING..." : "UPSCALE"}
+              {controller.isUpscaling ? "Upscaling..." : "Upscale"}
             </Button>
           ) : null}
 
           {canShowCompareControl ? (
             <Label
               htmlFor="compare-mode"
-              className="inline-flex h-8 items-center gap-2 rounded-md border border-border/70 bg-secondary px-3 font-mono text-[10px] font-bold tracking-wide text-foreground uppercase"
+              className="inline-flex h-8 items-center gap-2 rounded-md border border-border/70 bg-secondary px-3 font-mono text-[10px] font-bold tracking-wide text-foreground"
             >
               <Checkbox
                 id="compare-mode"
@@ -132,8 +132,8 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
           ) : null}
 
           {canShowCompareControl ? (
-            <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white uppercase">
-              UPSCALED
+            <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white">
+              Upscaled
             </span>
           ) : null}
 
@@ -144,9 +144,9 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="h-8 font-mono text-[10px] tracking-wide uppercase"
+                  className="h-8 font-mono text-[10px] tracking-wide"
                 >
-                  USE_AS_INPUT
+                  Use as Input
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -176,10 +176,10 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  className="h-8 font-mono text-[10px] tracking-wide uppercase"
+                  className="h-8 font-mono text-[10px] tracking-wide"
                 >
                   <Download size={13} />
-                  DOWNLOAD
+                  Download
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -348,7 +348,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
               </TransformWrapper>
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-transparent font-mono text-xs tracking-wider text-muted-foreground">
-                NO IMAGE SELECTED
+                No image selected
               </div>
             )}
           </div>
@@ -365,8 +365,8 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
           </DialogTitle>
 
           <div className="flex h-12 items-center justify-between border-b border-white/15 px-4">
-            <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase">
-              ZOOM: {fullscreenZoomPercent}%
+            <span className="font-mono text-[10px] font-bold tracking-[0.15em]">
+              Zoom: {fullscreenZoomPercent}%
             </span>
 
             <div className="flex items-center gap-2">
@@ -394,7 +394,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-8 px-3 font-mono text-[10px] tracking-wider uppercase"
+                  className="h-8 px-3 font-mono text-[10px] tracking-wider"
                 >
                   Close
                 </Button>
@@ -432,7 +432,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
               </TransformWrapper>
             ) : (
               <div className="flex h-full w-full items-center justify-center font-mono text-xs tracking-wider text-zinc-400">
-                NO IMAGE SELECTED
+                No image selected
               </div>
             )}
           </div>
@@ -453,17 +453,17 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
 
       <div className="h-44 border-t border-border/60 bg-muted/40 px-4 py-4 sm:px-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
+          <h2 className="flex items-center gap-2 font-mono text-[10px] font-bold tracking-[0.2em] text-muted-foreground">
             <History size={13} />
-            GENERATION_HISTORY
+            Generated Images
           </h2>
-          <Button
+          {/* <Button
             type="button"
             variant="ghost"
-            className="h-7 px-2 font-mono text-[10px] font-bold tracking-[0.15em] text-primary uppercase"
+            className="h-7 px-2 font-mono text-[10px] font-bold tracking-[0.15em] text-primary"
           >
-            EXPORT_ALL
-          </Button>
+            Export all
+          </Button> */}
         </div>
 
         <div className="flex h-27.5 gap-3 overflow-x-auto pb-2">

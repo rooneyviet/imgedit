@@ -43,8 +43,8 @@ export function AuthDialog({
   const [providerMessage, setProviderMessage] = useState<string | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
 
-  const heading = mode === "login" ? "LOGIN" : "REGISTER"
-  const submitLabel = mode === "login" ? "SIGN_IN" : "CREATE_ACCOUNT"
+  const heading = mode === "login" ? "Login" : "Register"
+  const submitLabel = mode === "login" ? "Sign in" : "Create account"
 
   const activeError = localError || error
   const isBusy = isLoadingSession || isSubmitting
@@ -154,10 +154,10 @@ export function AuthDialog({
               {mode === "register" ? (
                 <div className="space-y-2">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
                     htmlFor="display-name"
                   >
-                    DISPLAY_NAME
+                    Display name
                   </label>
                   <Input
                     id="display-name"
@@ -172,17 +172,17 @@ export function AuthDialog({
 
               <div className="space-y-2">
                 <label
-                  className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                  className="block text-[10px] font-bold tracking-widest text-zinc-500"
                   htmlFor="auth-email"
                 >
-                  EMAIL_ADDRESS
+                  Email address
                 </label>
                 <Input
                   id="auth-email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="USER@WORKSPACE.IO"
+                  placeholder="user@workspace.io"
                   disabled={isBusy}
                   required
                   className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
@@ -192,19 +192,19 @@ export function AuthDialog({
               <div className="space-y-2">
                 <div className="flex items-end justify-between">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
                     htmlFor="auth-password"
                   >
-                    PASSWORD
+                    Password
                   </label>
                   <button
                     type="button"
                     onClick={() =>
                       setLocalError("Password reset flow is not wired yet")
                     }
-                    className="text-[9px] font-bold tracking-wider text-primary uppercase hover:underline"
+                    className="text-[9px] font-bold tracking-wider text-primary hover:underline"
                   >
-                    FORGOT_PASSWORD?
+                    Forgot password?
                   </button>
                 </div>
                 <Input
@@ -222,10 +222,10 @@ export function AuthDialog({
               {mode === "register" ? (
                 <div className="space-y-2">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500 uppercase"
+                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
                     htmlFor="auth-confirm-password"
                   >
-                    CONFIRM_PASSWORD
+                    Confirm password
                   </label>
                   <Input
                     id="auth-confirm-password"
@@ -244,16 +244,16 @@ export function AuthDialog({
                 <Button
                   type="submit"
                   disabled={isBusy}
-                  className="h-14 w-full bg-gradient-to-br from-primary to-fuchsia-500 text-xs font-bold tracking-[0.2em] text-primary-foreground uppercase hover:opacity-90"
+                  className="h-14 w-full bg-gradient-to-br from-primary to-fuchsia-500 text-xs font-bold tracking-[0.2em] text-primary-foreground hover:opacity-90"
                 >
-                  {isBusy ? "PROCESSING..." : submitLabel}
+                  {isBusy ? "Processing..." : submitLabel}
                   <ArrowRight className="size-4" />
                 </Button>
 
                 <div className="relative flex items-center py-1">
                   <div className="grow border-t border-zinc-300/60" />
-                  <span className="mx-3 text-[9px] font-bold tracking-widest text-zinc-400 uppercase">
-                    OR_USE_PROVIDER
+                  <span className="mx-3 text-[9px] font-bold tracking-widest text-zinc-400">
+                    Or use a provider
                   </span>
                   <div className="grow border-t border-zinc-300/60" />
                 </div>
@@ -265,27 +265,27 @@ export function AuthDialog({
                   onClick={() =>
                     setProviderMessage("Google auth is coming soon in this app")
                   }
-                  className="h-14 w-full border-zinc-300/70 bg-zinc-50 text-xs font-bold tracking-[0.2em] text-zinc-800 uppercase hover:bg-zinc-100"
+                  className="h-14 w-full border-zinc-300/70 bg-zinc-50 text-xs font-bold tracking-[0.2em] text-zinc-800 hover:bg-zinc-100"
                 >
-                  CONTINUE_WITH_GOOGLE
+                  Continue with Google
                 </Button>
               </div>
             </form>
 
             {verificationHint ? (
-              <div className="mt-5 bg-emerald-100 px-3 py-2 text-[10px] font-semibold tracking-wide text-emerald-800 uppercase">
+              <div className="mt-5 bg-emerald-100 px-3 py-2 text-[10px] font-semibold tracking-wide text-emerald-800">
                 {verificationHint}. Check your inbox, then sign in.
               </div>
             ) : null}
 
             {providerMessage ? (
-              <p className="mt-4 text-[10px] font-semibold tracking-wide text-zinc-600 uppercase">
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-zinc-600">
                 {providerMessage}
               </p>
             ) : null}
 
             {activeError ? (
-              <p className="mt-4 text-[10px] font-semibold tracking-wide text-red-600 uppercase">
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-red-600">
                 {activeError}
               </p>
             ) : null}
@@ -293,12 +293,12 @@ export function AuthDialog({
             <div className="pt-6 text-center">
               <button
                 type="button"
-                className="text-[10px] font-bold text-primary uppercase hover:underline"
+                className="text-[10px] font-bold text-primary hover:underline"
                 onClick={() =>
                   switchMode(mode === "login" ? "register" : "login")
                 }
               >
-                {mode === "login" ? "CREATE_ACCOUNT" : "BACK_TO_LOGIN"}
+                {mode === "login" ? "Create account" : "Back to login"}
               </button>
             </div>
           </div>

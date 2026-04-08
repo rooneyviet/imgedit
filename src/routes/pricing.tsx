@@ -10,7 +10,9 @@ import {
 
 export const Route = createFileRoute("/pricing")({
   loader: ({ context }) => {
-    return context.queryClient.ensureQueryData(createPricingCatalogQueryOptions())
+    return context.queryClient.ensureQueryData(
+      createPricingCatalogQueryOptions()
+    )
   },
   component: PricingPage,
 })
@@ -173,7 +175,8 @@ export function PricingPage() {
                   <span className="text-sm text-white/60">/YEAR</span>
                 </div>
                 <span className="mt-1 font-mono text-xs font-bold tracking-wider text-[#a3f876] uppercase">
-                  ONLY ~{formatUsd(pricing.annualEquivalentMonthlyPriceCents)} / MONTH
+                  ONLY ~{formatUsd(pricing.annualEquivalentMonthlyPriceCents)} /
+                  MONTH
                 </span>
               </div>
             </div>
@@ -285,7 +288,7 @@ export function PricingPage() {
             IMG EDIT
           </span>
           <p className="mt-2 font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            © 2024 IMG EDIT. ALL RIGHTS RESERVED.
+            © 2026 IMG EDIT. ALL RIGHTS RESERVED.
           </p>
         </div>
       </footer>
