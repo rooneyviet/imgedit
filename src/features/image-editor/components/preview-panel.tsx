@@ -63,10 +63,16 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
     Boolean(selectedGeneratedSlot?.generatedSrc) &&
     Boolean(selectedGeneratedSlot?.upscaledSrc)
   const isCompareZoomCompatible = previewZoomPercent === 100
+  const isFullscreenCompareZoomCompatible = fullscreenZoomPercent === 100
   const showCompareSlider =
     canShowCompareControl &&
     hasCompareImages &&
     isCompareZoomCompatible &&
+    isCompareEnabled
+  const showFullscreenCompareSlider =
+    canShowCompareControl &&
+    hasCompareImages &&
+    isFullscreenCompareZoomCompatible &&
     isCompareEnabled
 
   useEffect(() => {
@@ -388,6 +394,24 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
             </span>
 
             <div className="flex items-center gap-2">
+              {canShowCompareControl ? (
+                <Label
+                  htmlFor="compare-mode-fullscreen"
+                  className="inline-flex h-8 items-center gap-2 rounded-md border border-white/30 bg-white/10 px-3 font-mono text-[10px] font-bold tracking-wide text-white"
+                >
+                  <Checkbox
+                    id="compare-mode-fullscreen"
+                    checked={isCompareEnabled}
+                    onCheckedChange={(checked) => {
+                      setIsCompareEnabled(checked === true)
+                    }}
+                    disabled={!isFullscreenCompareZoomCompatible}
+                    className="rounded-xs border-white/60 bg-transparent data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+                  />
+                  Compare
+                </Label>
+              ) : null}
+
               <Button
                 type="button"
                 size="icon"
@@ -440,12 +464,53 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                   wrapperClass="!h-full !w-full"
                   contentClass="!flex !h-full !w-full !items-center !justify-center"
                 >
-                  <img
-                    src={selectedImage.src}
-                    alt={selectedImage.label}
-                    className="max-h-full max-w-full object-contain select-none"
-                    draggable={false}
-                  />
+                  {showFullscreenCompareSlider &&
+                  selectedGeneratedSlot?.generatedSrc &&
+                  selectedGeneratedSlot?.upscaledSrc ? (
+                    <div className="relative h-full w-full">
+                      <ReactCompareSlider
+                        itemOne={
+                          <ReactCompareSliderImage
+                            src={selectedGeneratedSlot.generatedSrc}
+                            alt={`${selectedImage.label} generated`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        }
+                        itemTwo={
+                          <ReactCompareSliderImage
+                            src={selectedGeneratedSlot.upscaledSrc}
+                            alt={`${selectedImage.label} upscaled`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        }
+                        style={{ width: "100%", height: "100%" }}
+                      />
+
+                      <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-center justify-between">
+                        <span className="rounded-md bg-black/65 px-2 py-1 font-mono text-[9px] font-bold tracking-wide text-white">
+                          Before upscale
+                        </span>
+                        <span className="rounded-md bg-black/65 px-2 py-1 font-mono text-[9px] font-bold tracking-wide text-white">
+                          After upscale
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={selectedImage.src}
+                      alt={selectedImage.label}
+                      className="max-h-full max-w-full object-contain select-none"
+                      draggable={false}
+                    />
+                  )}
                 </TransformComponent>
               </TransformWrapper>
             ) : (
