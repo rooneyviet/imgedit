@@ -1,13 +1,18 @@
+import { useCallback, useEffect, useState } from "react"
+import type { Paddle } from "@paddle/paddle-js"
 import { Check, Coins } from "lucide-react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useServerFn } from "@tanstack/react-start"
 
 import { AppFooter } from "@/components/app-footer"
 import { Button } from "@/components/ui/button"
+import { useAppAuth } from "@/features/auth/app-auth-context"
 import {
   createPricingCatalogQueryOptions,
   createPricingPageQueryOptions,
 } from "@/features/pricing/infrastructure/pricing.queries"
+import { createPaddleCheckoutContext } from "@/lib/server/create-paddle-checkout-context"
 
 export const Route = createFileRoute("/pricing")({
   loader: ({ context }) => {
@@ -24,6 +29,31 @@ const sharedFeatures = [
   "COMMERCIAL LICENSE",
 ] as const
 
+type PaidPlanCode = "MONTHLY" | "ANNUAL"
+
+function readClientPaddleEnvironment(): "sandbox" | "production" {
+  const rawEnvironment = (import.meta.env.VITE_PADDLE_ENV ?? "sandbox")
+    .toString()
+    .trim()
+    .toLowerCase()
+
+  return rawEnvironment === "production" ? "production" : "sandbox"
+}
+
+function readClientPriceId(planCode: PaidPlanCode): string | null {
+  if (planCode === "MONTHLY") {
+    const priceId = import.meta.env.VITE_PADDLE_PRICE_ID_MONTHLY
+    return typeof priceId === "string" && priceId.trim().length > 0
+      ? priceId.trim()
+      : null
+  }
+
+  const priceId = import.meta.env.VITE_PADDLE_PRICE_ID_ANNUAL
+  return typeof priceId === "string" && priceId.trim().length > 0
+    ? priceId.trim()
+    : null
+}
+
 function formatUsd(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -35,11 +65,126 @@ function formatUsd(cents: number): string {
 
 function PricingPage() {
   const { data: pricing } = useSuspenseQuery(createPricingPageQueryOptions())
+  const auth = useAppAuth()
+  const createPaddleCheckoutContextServerFn = useServerFn(
+    createPaddleCheckoutContext
+  )
+  const [paddle, setPaddle] = useState<Paddle | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [pendingPlanCode, setPendingPlanCode] = useState<PaidPlanCode | null>(
+    null
+  )
 
   const singleFullEditCredits =
     pricing.operationCosts.normalImage +
     pricing.operationCosts.styleApplied +
     pricing.operationCosts.upscale4k
+
+  useEffect(() => {
+    const clientToken =
+      typeof import.meta.env.VITE_PADDLE_CLIENT_TOKEN === "string"
+        ? import.meta.env.VITE_PADDLE_CLIENT_TOKEN.trim()
+        : ""
+
+    if (!clientToken) {
+      setCheckoutError("Billing checkout is not configured yet.")
+      return
+    }
+
+    let canceled = false
+
+    void import("@paddle/paddle-js")
+      .then(async ({ initializePaddle }) => {
+        const initialized = await initializePaddle({
+          environment: readClientPaddleEnvironment(),
+          token: clientToken,
+        })
+
+        if (canceled) {
+          return
+        }
+
+        if (!initialized) {
+          setCheckoutError("Unable to initialize Paddle checkout.")
+          return
+        }
+
+        setPaddle(initialized)
+        setCheckoutError(null)
+      })
+      .catch(() => {
+        if (!canceled) {
+          setCheckoutError("Unable to load Paddle checkout.")
+        }
+      })
+
+    return () => {
+      canceled = true
+    }
+  }, [])
+
+  const openPaidPlanCheckout = useCallback(
+    async (planCode: PaidPlanCode) => {
+      setCheckoutError(null)
+
+      if (!auth.accessToken) {
+        auth.openLoginDialog()
+        return
+      }
+
+      if (!paddle) {
+        setCheckoutError("Billing checkout is still loading. Please retry.")
+        return
+      }
+
+      const priceId = readClientPriceId(planCode)
+      if (!priceId) {
+        setCheckoutError("Billing plan is not configured.")
+        return
+      }
+
+      setPendingPlanCode(planCode)
+
+      try {
+        const checkoutContext = await createPaddleCheckoutContextServerFn({
+          data: {
+            accessToken: auth.accessToken,
+          },
+        })
+
+        paddle.Checkout.open({
+          items: [
+            {
+              priceId,
+              quantity: 1,
+            },
+          ],
+          customer: checkoutContext.email
+            ? {
+                email: checkoutContext.email,
+              }
+            : undefined,
+          customData: {
+            profileId: checkoutContext.profileId,
+            signedAt: checkoutContext.signedAt,
+            signature: checkoutContext.signature,
+          },
+          settings: {
+            displayMode: "overlay",
+            theme: "light",
+            successUrl: `${window.location.origin}/pricing?checkout=success`,
+          },
+        })
+      } catch (error) {
+        setCheckoutError(
+          error instanceof Error ? error.message : "Failed to open checkout."
+        )
+      } finally {
+        setPendingPlanCode(null)
+      }
+    },
+    [auth, createPaddleCheckoutContextServerFn, paddle]
+  )
 
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-[#f9f9f9] text-[#1a1c1c]">
@@ -153,9 +298,15 @@ function PricingPage() {
 
             <Button
               type="button"
+              onClick={() => {
+                void openPaidPlanCheckout("MONTHLY")
+              }}
+              disabled={!paddle || pendingPlanCode !== null}
               className="h-auto rounded-none bg-linear-to-br from-[#a70070] to-[#d3008e] py-4 font-mono text-xs font-bold tracking-[0.2em] text-white uppercase transition-colors hover:from-[#8e005f] hover:to-[#b6007a]"
             >
-              CHOOSE MONTHLY PLAN
+              {pendingPlanCode === "MONTHLY"
+                ? "OPENING CHECKOUT..."
+                : "CHOOSE MONTHLY PLAN"}
             </Button>
           </article>
 
@@ -213,12 +364,24 @@ function PricingPage() {
 
             <Button
               type="button"
+              onClick={() => {
+                void openPaidPlanCheckout("ANNUAL")
+              }}
+              disabled={!paddle || pendingPlanCode !== null}
               className="h-auto rounded-none bg-white py-4 font-mono text-xs font-bold tracking-[0.2em] text-black uppercase hover:bg-[#ffd8e7]"
             >
-              CHOOSE ANNUAL PLAN
+              {pendingPlanCode === "ANNUAL"
+                ? "OPENING CHECKOUT..."
+                : "CHOOSE ANNUAL PLAN"}
             </Button>
           </article>
         </section>
+
+        {checkoutError ? (
+          <p className="mt-4 font-mono text-xs font-bold tracking-wide text-red-700 uppercase">
+            {checkoutError}
+          </p>
+        ) : null}
 
         <section className="mt-20">
           <div className="border-4 border-black p-8 md:p-16">
