@@ -2,6 +2,7 @@ import { Check, Coins } from "lucide-react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
+import { AppFooter } from "@/components/app-footer"
 import { Button } from "@/components/ui/button"
 import {
   createPricingCatalogQueryOptions,
@@ -283,16 +284,7 @@ function PricingPage() {
         </section>
       </main>
 
-      <footer className="flex w-full max-w-full flex-col items-center justify-between border-t border-stone-200 bg-stone-100 px-8 py-12 md:flex-row">
-        <div className="mb-8 md:mb-0">
-          <span className="font-mono text-xl font-bold tracking-tighter text-stone-900">
-            IMG EDIT
-          </span>
-          <p className="mt-2 font-mono text-xs tracking-[0.2em] text-stone-500 uppercase">
-            © 2026 IMG EDIT. ALL RIGHTS RESERVED.
-          </p>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   )
 }

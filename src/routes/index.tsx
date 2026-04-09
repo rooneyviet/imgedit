@@ -27,13 +27,6 @@ function App() {
   })
 
   return (
-    <ImageEditorPage
-      controller={controller}
-      auth={{
-        isAuthenticated: auth.isAuthenticated,
-        userDisplayName: auth.userDisplayName,
-        userEmail: auth.userEmail,
-      }}
-    />
+    <ImageEditorPage controller={controller} />
   )
 }
