@@ -49,6 +49,17 @@ Set these repository secrets (never commit real values):
 - `SUPABASE_AUTH_INTERNAL_URL` (optional)
 - `VITE_SUPABASE_AUTH_URL`
 
+Auth URL guidance:
+
+- You do **not** need a separate auth domain.
+- Same-domain path mode (recommended for one domain):
+  - `SUPABASE_AUTH_EXTERNAL_URL=https://your-domain.com/auth`
+  - `VITE_SUPABASE_AUTH_URL=https://your-domain.com/auth`
+- Subdomain mode (optional):
+  - `SUPABASE_AUTH_EXTERNAL_URL=https://auth.your-domain.com`
+  - `VITE_SUPABASE_AUTH_URL=https://auth.your-domain.com`
+- In either mode, the URL above must be routed by Caddy to GoTrue (`supabase-auth:9999`). If auth requests hit the app container instead, login/register can return HTML and fail with `JSON.parse: unexpected character ...`.
+
 `ci.yml` writes `$HOME/imgedit/.env.production` on each deploy from these secrets automatically.
 
 ## 4. Configure Caddy
@@ -58,6 +69,7 @@ sudo cp "$HOME/imgedit/deploy/Caddyfile.example" /etc/caddy/Caddyfile
 ```
 
 Edit `/etc/caddy/Caddyfile` and replace `your-domain.com` with your real domain.
+The provided example uses same-domain path mode (`/auth` -> GoTrue). If you prefer subdomain mode, uncomment `auth.your-domain.com` and set DNS for that host to your VPS.
 
 Then apply:
 
@@ -86,7 +98,7 @@ Set these repository secrets:
     - writes `$HOME/imgedit/.env.production` from GitHub Secrets
     - runs `deploy/deploy.sh`
       - `git pull --ff-only`
-      - `docker compose -f docker-compose.prod.yml up -d --build`
+      - `docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build`
 
 ## 7. Port used in production
 

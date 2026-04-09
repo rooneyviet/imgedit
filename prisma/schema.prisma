@@ -36,12 +36,6 @@ enum BillingSubscriptionStatus {
   TRIALING
 }
 
-enum BillingPaymentEventStatus {
-  RECEIVED
-  PROCESSED
-  FAILED
-}
-
 model Profile {
   id          String   @id @db.Uuid
   email       String?  @unique
@@ -50,7 +44,6 @@ model Profile {
   updatedAt   DateTime @updatedAt @map("updated_at")
   creditAccount CreditAccount?
   subscriptions BillingSubscription[]
-  paymentEvents BillingPaymentEvent[]
 
   @@map("profiles")
 }
@@ -85,16 +78,6 @@ model CreditTransaction {
   @@map("credit_transactions")
 }
 
-model CreditPricingRule {
-  code           CreditPricingRuleCode @id
-  creditsPerUnit Int                   @map("credits_per_unit")
-  isActive       Boolean               @default(true) @map("is_active")
-  createdAt      DateTime              @default(now()) @map("created_at")
-  updatedAt      DateTime              @updatedAt @map("updated_at")
-
-  @@map("credit_pricing_rules")
-}
-
 model BillingPlan {
   id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code           BillingPlanCode       @unique
@@ -123,29 +106,8 @@ model BillingSubscription {
   updatedAt         DateTime                  @updatedAt @map("updated_at")
   profile           Profile                   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   plan              BillingPlan               @relation(fields: [planId], references: [id], onDelete: Restrict)
-  paymentEvents     BillingPaymentEvent[]
 
   @@index([profileId, status])
   @@index([planId])
   @@map("billing_subscriptions")
-}
-
-model BillingPaymentEvent {
-  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  profileId       String?                   @map("profile_id") @db.Uuid
-  subscriptionId  String?                   @map("subscription_id") @db.Uuid
-  provider        String
-  providerEventId String                    @map("provider_event_id")
-  eventType       String                    @map("event_type")
-  status          BillingPaymentEventStatus @default(RECEIVED)
-  payload         Json?
-  createdAt       DateTime                  @default(now()) @map("created_at")
-  updatedAt       DateTime                  @updatedAt @map("updated_at")
-  profile         Profile?                  @relation(fields: [profileId], references: [id], onDelete: SetNull)
-  subscription    BillingSubscription?      @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-
-  @@unique([provider, providerEventId])
-  @@index([profileId])
-  @@index([subscriptionId])
-  @@map("billing_payment_events")
 }

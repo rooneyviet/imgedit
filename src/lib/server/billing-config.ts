@@ -5,6 +5,8 @@ const DEFAULT_CREDIT_COST_STYLE_APPLIED = 1
 const DEFAULT_PLAN_FREE_MONTHLY_CREDITS = 10
 const DEFAULT_PLAN_MONTHLY_MONTHLY_CREDITS = 50
 const DEFAULT_PLAN_ANNUAL_MONTHLY_CREDITS = 1000
+const DEFAULT_PLAN_MONTHLY_PRICE_CENTS = 449
+const DEFAULT_PLAN_ANNUAL_PRICE_CENTS = 1999
 
 export type BillingCreditConfig = {
   creditCostNormalImage: number
@@ -13,6 +15,8 @@ export type BillingCreditConfig = {
   planFreeMonthlyCredits: number
   planMonthlyMonthlyCredits: number
   planAnnualMonthlyCredits: number
+  planMonthlyPriceCents: number
+  planAnnualPriceCents: number
 }
 
 function parseNonNegativeInteger(
@@ -65,6 +69,16 @@ export function readBillingCreditConfig(
       "PLAN_ANNUAL_MONTHLY_CREDITS",
       env.PLAN_ANNUAL_MONTHLY_CREDITS,
       DEFAULT_PLAN_ANNUAL_MONTHLY_CREDITS
+    ),
+    planMonthlyPriceCents: parseNonNegativeInteger(
+      "PLAN_MONTHLY_PRICE_CENTS",
+      env.PLAN_MONTHLY_PRICE_CENTS,
+      DEFAULT_PLAN_MONTHLY_PRICE_CENTS
+    ),
+    planAnnualPriceCents: parseNonNegativeInteger(
+      "PLAN_ANNUAL_PRICE_CENTS",
+      env.PLAN_ANNUAL_PRICE_CENTS,
+      DEFAULT_PLAN_ANNUAL_PRICE_CENTS
     ),
   }
 }
