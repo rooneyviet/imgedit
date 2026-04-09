@@ -13,6 +13,8 @@ describe("billing-config", () => {
       planFreeMonthlyCredits: 10,
       planMonthlyMonthlyCredits: 50,
       planAnnualMonthlyCredits: 1000,
+      planMonthlyPriceCents: 449,
+      planAnnualPriceCents: 1999,
     })
   })
 
@@ -24,6 +26,8 @@ describe("billing-config", () => {
       PLAN_FREE_MONTHLY_CREDITS: "15",
       PLAN_MONTHLY_MONTHLY_CREDITS: "60",
       PLAN_ANNUAL_MONTHLY_CREDITS: "1100",
+      PLAN_MONTHLY_PRICE_CENTS: "599",
+      PLAN_ANNUAL_PRICE_CENTS: "2499",
     })
 
     expect(config).toEqual({
@@ -33,6 +37,8 @@ describe("billing-config", () => {
       planFreeMonthlyCredits: 15,
       planMonthlyMonthlyCredits: 60,
       planAnnualMonthlyCredits: 1100,
+      planMonthlyPriceCents: 599,
+      planAnnualPriceCents: 2499,
     })
   })
 

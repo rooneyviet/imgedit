@@ -17,10 +17,6 @@ type CreditCostItem = {
   quantity: number
 }
 
-type SyncOptions = {
-  force?: boolean
-}
-
 type ChargeCreditsInput = {
   profileId: string
   requiredCredits: number
@@ -28,22 +24,6 @@ type ChargeCreditsInput = {
   operationCode: CreditOperationCode
   metadata?: Prisma.InputJsonValue
 }
-
-const PLAN_CODES = {
-  FREE: "FREE",
-  MONTHLY: "MONTHLY",
-  ANNUAL: "ANNUAL",
-} as const
-
-const PLAN_INTERVALS = {
-  MONTHLY: "MONTHLY",
-  YEARLY: "YEARLY",
-} as const
-
-const SYNC_TTL_MS = 30_000
-
-let lastSyncedSignature: string | null = null
-let lastSyncedAt = 0
 
 export class InsufficientCreditsError extends Error {
   requiredCredits: number
@@ -81,149 +61,33 @@ export function calculateCreditsFromUnitCosts(
   }, 0)
 }
 
-function createConfigSignature(): string {
+function getUnitCostsFromConfig(): Record<CreditOperationCode, number> {
   const config = readBillingCreditConfig()
-  return JSON.stringify(config)
+  return {
+    NORMAL_IMAGE: config.creditCostNormalImage,
+    UPSCALE_4K: config.creditCostUpscale4k,
+    STYLE_APPLIED: config.creditCostStyleApplied,
+  }
 }
 
-export async function syncCreditsAndBillingCatalog(
-  options: SyncOptions = {}
-): Promise<void> {
-  const now = Date.now()
-  const signature = createConfigSignature()
-
-  if (
-    !options.force &&
-    lastSyncedSignature === signature &&
-    now - lastSyncedAt < SYNC_TTL_MS
-  ) {
-    return
-  }
-
-  const config = readBillingCreditConfig()
-
-  await prisma.$transaction(async (tx) => {
-    await tx.creditPricingRule.upsert({
-      where: { code: CREDIT_OPERATION_CODES.NORMAL_IMAGE },
-      create: {
-        code: CREDIT_OPERATION_CODES.NORMAL_IMAGE,
-        creditsPerUnit: config.creditCostNormalImage,
-        isActive: true,
-      },
-      update: {
-        creditsPerUnit: config.creditCostNormalImage,
-        isActive: true,
-      },
-    })
-
-    await tx.creditPricingRule.upsert({
-      where: { code: CREDIT_OPERATION_CODES.UPSCALE_4K },
-      create: {
-        code: CREDIT_OPERATION_CODES.UPSCALE_4K,
-        creditsPerUnit: config.creditCostUpscale4k,
-        isActive: true,
-      },
-      update: {
-        creditsPerUnit: config.creditCostUpscale4k,
-        isActive: true,
-      },
-    })
-
-    await tx.creditPricingRule.upsert({
-      where: { code: CREDIT_OPERATION_CODES.STYLE_APPLIED },
-      create: {
-        code: CREDIT_OPERATION_CODES.STYLE_APPLIED,
-        creditsPerUnit: config.creditCostStyleApplied,
-        isActive: true,
-      },
-      update: {
-        creditsPerUnit: config.creditCostStyleApplied,
-        isActive: true,
-      },
-    })
-
-    await tx.billingPlan.upsert({
-      where: { code: PLAN_CODES.FREE },
-      create: {
-        code: PLAN_CODES.FREE,
-        name: "Free",
-        priceCents: 0,
-        currency: "USD",
-        interval: PLAN_INTERVALS.MONTHLY,
-        monthlyCredits: config.planFreeMonthlyCredits,
-        isActive: true,
-      },
-      update: {
-        name: "Free",
-        priceCents: 0,
-        currency: "USD",
-        interval: PLAN_INTERVALS.MONTHLY,
-        monthlyCredits: config.planFreeMonthlyCredits,
-        isActive: true,
-      },
-    })
-
-    await tx.billingPlan.upsert({
-      where: { code: PLAN_CODES.MONTHLY },
-      create: {
-        code: PLAN_CODES.MONTHLY,
-        name: "Monthly",
-        priceCents: 449,
-        currency: "USD",
-        interval: PLAN_INTERVALS.MONTHLY,
-        monthlyCredits: config.planMonthlyMonthlyCredits,
-        isActive: true,
-      },
-      update: {
-        name: "Monthly",
-        priceCents: 449,
-        currency: "USD",
-        interval: PLAN_INTERVALS.MONTHLY,
-        monthlyCredits: config.planMonthlyMonthlyCredits,
-        isActive: true,
-      },
-    })
-
-    await tx.billingPlan.upsert({
-      where: { code: PLAN_CODES.ANNUAL },
-      create: {
-        code: PLAN_CODES.ANNUAL,
-        name: "Annual",
-        priceCents: 1999,
-        currency: "USD",
-        interval: PLAN_INTERVALS.YEARLY,
-        monthlyCredits: config.planAnnualMonthlyCredits,
-        isActive: true,
-      },
-      update: {
-        name: "Annual",
-        priceCents: 1999,
-        currency: "USD",
-        interval: PLAN_INTERVALS.YEARLY,
-        monthlyCredits: config.planAnnualMonthlyCredits,
-        isActive: true,
-      },
-    })
-  })
-
-  lastSyncedSignature = signature
-  lastSyncedAt = now
+export function calculateRequiredCredits(items: Array<CreditCostItem>): number {
+  const unitCosts = getUnitCostsFromConfig()
+  return calculateCreditsFromUnitCosts(items, unitCosts)
 }
 
 export async function ensureUserBillingState(profileId: string): Promise<{
   creditAccountId: string
   remainingCredits: number
 }> {
-  await syncCreditsAndBillingCatalog()
+  const config = readBillingCreditConfig()
 
   return prisma.$transaction(async (tx) => {
     const freePlan = await tx.billingPlan.findUnique({
       where: {
-        code: PLAN_CODES.FREE,
+        code: "FREE",
       },
       select: {
         id: true,
-        monthlyCredits: true,
       },
     })
 
@@ -235,7 +99,7 @@ export async function ensureUserBillingState(profileId: string): Promise<{
       where: { profileId },
       create: {
         profileId,
-        balance: freePlan.monthlyCredits,
+        balance: config.planFreeMonthlyCredits,
       },
       update: {},
       select: {
@@ -269,63 +133,6 @@ export async function ensureUserBillingState(profileId: string): Promise<{
       remainingCredits: creditAccount.balance,
     }
   })
-}
-
-async function getUnitCostsForCodes(
-  codes: Array<CreditOperationCode>
-): Promise<Record<CreditOperationCode, number>> {
-  const uniqueCodes = Array.from(new Set(codes))
-  if (uniqueCodes.length === 0) {
-    return {
-      NORMAL_IMAGE: 0,
-      UPSCALE_4K: 0,
-      STYLE_APPLIED: 0,
-    }
-  }
-
-  const rules = await prisma.creditPricingRule.findMany({
-    where: {
-      code: {
-        in: uniqueCodes,
-      },
-      isActive: true,
-    },
-    select: {
-      code: true,
-      creditsPerUnit: true,
-    },
-  })
-
-  const costMap = new Map<CreditOperationCode, number>()
-  for (const rule of rules) {
-    costMap.set(rule.code as CreditOperationCode, rule.creditsPerUnit)
-  }
-
-  for (const code of uniqueCodes) {
-    if (!costMap.has(code)) {
-      throw new Error(`Missing active pricing rule for ${code}`)
-    }
-  }
-
-  return {
-    NORMAL_IMAGE: costMap.get(CREDIT_OPERATION_CODES.NORMAL_IMAGE) ?? 0,
-    UPSCALE_4K: costMap.get(CREDIT_OPERATION_CODES.UPSCALE_4K) ?? 0,
-    STYLE_APPLIED: costMap.get(CREDIT_OPERATION_CODES.STYLE_APPLIED) ?? 0,
-  }
-}
-
-export async function getNormalImageUnitCost(): Promise<number> {
-  const unitCosts = await getUnitCostsForCodes([
-    CREDIT_OPERATION_CODES.NORMAL_IMAGE,
-  ])
-  return unitCosts[CREDIT_OPERATION_CODES.NORMAL_IMAGE]
-}
-
-export async function calculateRequiredCredits(
-  items: Array<CreditCostItem>
-): Promise<number> {
-  const unitCosts = await getUnitCostsForCodes(items.map((item) => item.code))
-  return calculateCreditsFromUnitCosts(items, unitCosts)
 }
 
 export async function assertSufficientCredits(

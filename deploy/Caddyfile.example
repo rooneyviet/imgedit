@@ -4,5 +4,18 @@ your-domain.com {
   @static path /favicon.ico /robots.txt /manifest.json /assets/*
   header @static Cache-Control "public, max-age=31536000, immutable"
 
+  # Same-domain auth gateway:
+  # - Browser calls https://your-domain.com/auth/*
+  # - Path prefix /auth is stripped before proxying to GoTrue on :9999
+  handle_path /auth* {
+    reverse_proxy 127.0.0.1:9999
+  }
+
   reverse_proxy 127.0.0.1:3030
 }
+
+# Optional alternative: use a dedicated auth subdomain instead of /auth path.
+# auth.your-domain.com {
+#   encode zstd gzip
+#   reverse_proxy 127.0.0.1:9999
+# }

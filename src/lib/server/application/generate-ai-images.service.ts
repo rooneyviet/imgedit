@@ -6,7 +6,6 @@ import {
   assertSufficientCredits,
   calculateRequiredCredits,
   chargeCreditsOnSuccess,
-  syncCreditsAndBillingCatalog,
 } from "../credits"
 import {
   GENERATE_REPLICATE_IMAGE_TASK_ID,
@@ -149,11 +148,9 @@ export async function generateAiImagesUseCase(
 
   const input = toRequest(rawInput)
 
-  await syncCreditsAndBillingCatalog()
-
   const user = await requireAuthenticatedUser(input.accessToken)
   const count = Math.min(Math.max(input.count ?? 1, 1), MAX_GENERATED_IMAGES)
-  const requiredCredits = await calculateRequiredCredits([
+  const requiredCredits = calculateRequiredCredits([
     {
       code: CREDIT_OPERATION_CODES.NORMAL_IMAGE,
       quantity: count,
@@ -200,13 +197,16 @@ export async function generateAiImagesUseCase(
   }
 
   if (uploadableInputImagesDataUrls.length > 0) {
-    const uploadHandle = await tasks.trigger(UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID, {
-      inputImagesDataUrls: uploadableInputImagesDataUrls,
-      outputFormat: "webp",
-      outputQuality: 82,
-      maxWidth: 1536,
-      maxHeight: 1536,
-    })
+    const uploadHandle = await tasks.trigger(
+      UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID,
+      {
+        inputImagesDataUrls: uploadableInputImagesDataUrls,
+        outputFormat: "webp",
+        outputQuality: 82,
+        maxWidth: 1536,
+        maxHeight: 1536,
+      }
+    )
 
     const uploadRun = await runs.poll(uploadHandle.id, {
       pollIntervalMs: 1000,

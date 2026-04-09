@@ -20,6 +20,21 @@ function getAuthUrl(): string {
   return import.meta.env.VITE_SUPABASE_AUTH_URL || "http://localhost:9999"
 }
 
+function formatAuthError(error: unknown): string {
+  if (error instanceof Error) {
+    if (
+      error.message.includes("JSON.parse") ||
+      error.message.includes("Unexpected token")
+    ) {
+      return `Auth endpoint returned a non-JSON response. Check VITE_SUPABASE_AUTH_URL (${getAuthUrl()}) and reverse-proxy routing.`
+    }
+
+    return error.message
+  }
+
+  return "Unexpected auth error"
+}
+
 function parseDisplayName(user: User | null): string | null {
   const metadata = user?.user_metadata
   if (!metadata || typeof metadata !== "object") {
@@ -123,11 +138,7 @@ export function useAuth() {
         setUser(data.user ?? data.session?.user ?? null)
         return Boolean(data.session)
       } catch (unknownError) {
-        setError(
-          unknownError instanceof Error
-            ? unknownError.message
-            : "Unexpected error while signing in"
-        )
+        setError(formatAuthError(unknownError))
         return false
       } finally {
         setIsSubmitting(false)
@@ -177,11 +188,7 @@ export function useAuth() {
         setMode("login")
         return true
       } catch (unknownError) {
-        setError(
-          unknownError instanceof Error
-            ? unknownError.message
-            : "Unexpected error while creating account"
-        )
+        setError(formatAuthError(unknownError))
         return false
       } finally {
         setIsSubmitting(false)

@@ -1,9 +1,6 @@
 import { requireAuthenticatedUser } from "../auth"
-import {
-  ensureUserBillingState,
-  getNormalImageUnitCost,
-  syncCreditsAndBillingCatalog,
-} from "../credits"
+import { readBillingCreditConfig } from "../billing-config"
+import { ensureUserBillingState } from "../credits"
 import { prisma } from "../prisma"
 
 export type SyncUserProfileRequest = {
@@ -54,8 +51,6 @@ export async function syncUserProfileUseCase(
     throw new Error("Access token is required")
   }
 
-  await syncCreditsAndBillingCatalog()
-
   const user = await requireAuthenticatedUser(accessToken)
   const displayName = parseDisplayName(user.userMetadata)
 
@@ -80,7 +75,7 @@ export async function syncUserProfileUseCase(
   })
 
   const billingState = await ensureUserBillingState(profile.id)
-  const normalImageCredits = await getNormalImageUnitCost()
+  const config = readBillingCreditConfig()
 
   return {
     profile: {
@@ -88,7 +83,7 @@ export async function syncUserProfileUseCase(
       remainingCredits: billingState.remainingCredits,
     },
     pricing: {
-      normalImageCredits,
+      normalImageCredits: config.creditCostNormalImage,
     },
   }
 }

@@ -6,7 +6,6 @@ import {
   assertSufficientCredits,
   calculateRequiredCredits,
   chargeCreditsOnSuccess,
-  syncCreditsAndBillingCatalog,
 } from "../credits"
 import {
   UPSCALE_REPLICATE_IMAGE_TASK_ID,
@@ -74,12 +73,10 @@ export async function upscaleAiImageUseCase(
     throw new Error("Missing TRIGGER_SECRET_KEY")
   }
 
-  await syncCreditsAndBillingCatalog()
-
   const input = toRequest(rawInput)
   const user = await requireAuthenticatedUser(input.accessToken)
 
-  const requiredCredits = await calculateRequiredCredits([
+  const requiredCredits = calculateRequiredCredits([
     {
       code: CREDIT_OPERATION_CODES.UPSCALE_4K,
       quantity: 1,
