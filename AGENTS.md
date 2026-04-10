@@ -12,3 +12,7 @@
 2. Use the Shadcn MCP tools/workflow when adding components.
 3. Do not manually create Shadcn components by hand.
 4. If a component is needed, add it via Shadcn tooling and then customize usage in app code.
+
+## Frontend Rule
+
+1. Use TanStack Start Clean Architecture and reference existing files
