@@ -102,6 +102,7 @@ function RootLayout() {
   const normalImageCreditCost =
     profileSnapshot?.normalImageCreditCost ?? operationCosts?.normalImage ?? 0
   const upscale4kCreditCost = operationCosts?.upscale4k ?? 0
+  const activePlanCode = profileSnapshot?.activePlanCode ?? null
   const userLabel = userDisplayName || userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
 
   const setRemainingCredits = useCallback(
@@ -123,10 +124,12 @@ function RootLayout() {
       remainingCredits,
       normalImageCreditCost,
       upscale4kCreditCost,
+      activePlanCode,
       setRemainingCredits,
       openLoginDialog,
     }),
     [
+      activePlanCode,
       auth,
       normalImageCreditCost,
       openLoginDialog,

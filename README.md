@@ -41,3 +41,21 @@ To use the components in your app, import them as follows:
 ```tsx
 import { Button } from "@/components/ui/button";
 ```
+
+## Paddle sandbox billing
+
+1. Set these env vars:
+   - `VITE_PADDLE_CLIENT_TOKEN`
+   - `VITE_PADDLE_PRICE_ID_MONTHLY`
+   - `VITE_PADDLE_PRICE_ID_ANNUAL`
+   - `PADDLE_WEBHOOK_SECRET`
+   - `PADDLE_CUSTOM_DATA_SIGNING_SECRET` (recommended)
+2. Configure your Paddle notification destination (or Hookdeck source target) to forward to:
+   - `POST /api/paddle/webhook`
+   - Include at least these events: `transaction.completed`, `subscription.created`, `subscription.updated`, `subscription.canceled`, `subscription.past_due`
+3. Start the app:
+   - `docker compose up`
+4. Open `/pricing`, choose Monthly or Annual, then use Paddle sandbox card:
+   - Number: `4242 4242 4242 4242`
+   - CVC: `100`
+   - Expiry: any future date

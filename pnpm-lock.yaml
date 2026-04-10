@@ -20,6 +20,9 @@ importers:
       '@fontsource-variable/space-grotesk':
         specifier: ^5.2.10
         version: 5.2.10
+      '@paddle/paddle-js':
+        specifier: ^1.6.2
+        version: 1.6.2
       '@prisma/adapter-pg':
         specifier: ^7.6.0
         version: 7.6.0
@@ -1451,6 +1454,9 @@ packages:
 
   '@package-json/types@0.0.12':
     resolution: {integrity: sha512-uu43FGU34B5VM9mCNjXCwLaGHYjXdNincqKLaraaCW+7S2+SmiBg1Nv8bPnmschrIfZmfKNY9f3fC376MRrObw==}
+
+  '@paddle/paddle-js@1.6.2':
+    resolution: {integrity: sha512-nx1NXCzwWUWjf0iaRDiXZlfWgFjNZ6996RFcTDk0G0ggzrh514Zsc6jGTPOUGdLB1sYJXVQiKKoNLoKoXhH+sA==}
 
   '@polka/url@0.5.0':
     resolution: {integrity: sha512-oZLYFEAzUKyi3SKnXvj32ZCEGH6RDnao7COuCVhDydMS9NrCSVXhM79VaKyP5+Zc33m0QXEd2DN3UkU7OsHcfw==}
@@ -7969,6 +7975,8 @@ snapshots:
   '@oxc-project/types@0.123.0': {}
 
   '@package-json/types@0.0.12': {}
+
+  '@paddle/paddle-js@1.6.2': {}
 
   '@polka/url@0.5.0': {}
 
