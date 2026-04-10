@@ -149,6 +149,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_SUPABASE_AUTH_URL: ${VITE_SUPABASE_AUTH_URL:-http://localhost:9999}
+        VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
     image: imgedit:latest
     restart: unless-stopped
     env_file:
@@ -158,6 +159,8 @@ services:
       DIRECT_URL: postgresql://postgres:${SUPABASE_DB_PASSWORD:-postgres}@supabase-db:5432/${SUPABASE_DB_NAME:-postgres}
       SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
       VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
+      VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+      PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
     ports:
       - "127.0.0.1:3030:3030"
 
