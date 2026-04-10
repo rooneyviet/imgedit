@@ -150,6 +150,8 @@ services:
       args:
         VITE_SUPABASE_AUTH_URL: ${VITE_SUPABASE_AUTH_URL:-http://localhost:9999}
         VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+        VITE_PADDLE_PRICE_ID_MONTHLY: ${VITE_PADDLE_PRICE_ID_MONTHLY:-pri_01kns9ffc7vm0an4xy3r1v4mkp}
+        VITE_PADDLE_PRICE_ID_ANNUAL: ${VITE_PADDLE_PRICE_ID_ANNUAL:-pri_01kns9ggv7mbbhbt9fs5y6ys3n}
     image: imgedit:latest
     restart: unless-stopped
     env_file:
@@ -160,6 +162,8 @@ services:
       SUPABASE_AUTH_INTERNAL_URL: http://supabase-auth:9999
       VITE_SUPABASE_AUTH_URL: ${SUPABASE_AUTH_EXTERNAL_URL:-http://localhost:9999}
       VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+      VITE_PADDLE_PRICE_ID_MONTHLY: ${VITE_PADDLE_PRICE_ID_MONTHLY:-pri_01kns9ffc7vm0an4xy3r1v4mkp}
+      VITE_PADDLE_PRICE_ID_ANNUAL: ${VITE_PADDLE_PRICE_ID_ANNUAL:-pri_01kns9ggv7mbbhbt9fs5y6ys3n}
       PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
     ports:
       - "127.0.0.1:3030:3030"
