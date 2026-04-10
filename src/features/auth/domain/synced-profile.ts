@@ -6,6 +6,7 @@ export type SyncedProfile = {
   displayName: string | null
   remainingCredits: number
   normalImageCredits: number
+  activePlanCode: "FREE" | "MONTHLY" | "ANNUAL" | null
 }
 
 export type SyncedProfileSnapshot = {
@@ -13,6 +14,7 @@ export type SyncedProfileSnapshot = {
   userDisplayName: string | null
   remainingCredits: number
   normalImageCreditCost: number
+  activePlanCode: "FREE" | "MONTHLY" | "ANNUAL" | null
 }
 
 export function toSyncedProfile(
@@ -24,6 +26,7 @@ export function toSyncedProfile(
     displayName: response.profile.displayName,
     remainingCredits: response.profile.remainingCredits,
     normalImageCredits: response.pricing.normalImageCredits,
+    activePlanCode: response.profile.activePlanCode ?? null,
   }
 }
 
@@ -35,5 +38,6 @@ export function selectSyncedProfileSnapshot(
     userDisplayName: profile.displayName,
     remainingCredits: profile.remainingCredits,
     normalImageCreditCost: profile.normalImageCredits,
+    activePlanCode: profile.activePlanCode,
   }
 }

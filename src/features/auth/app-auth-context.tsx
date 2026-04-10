@@ -19,6 +19,7 @@ type AppAuthContextValue = {
   remainingCredits: number | null
   normalImageCreditCost: number
   upscale4kCreditCost: number
+  activePlanCode: "FREE" | "MONTHLY" | "ANNUAL" | null
   setRemainingCredits: (remainingCredits: number) => void
   signInWithPassword: (payload: { email: string; password: string }) => Promise<boolean>
   signUpWithPassword: (payload: RegisterPayload) => Promise<boolean>
