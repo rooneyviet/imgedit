@@ -66,6 +66,68 @@ describe("image editor controller flows", () => {
     ).rejects.toThrow("generation failed")
   })
 
+  it("onGenerate emits each image as it is generated", async () => {
+    const generateImages = vi
+      .fn()
+      .mockResolvedValueOnce({
+        images: ["https://img.test/one.jpg"],
+        chargedCredits: 3,
+        remainingCredits: 7,
+      })
+      .mockResolvedValueOnce({
+        images: ["https://img.test/two.jpg"],
+        chargedCredits: 3,
+        remainingCredits: 6,
+      })
+
+    const onImageGenerated = vi.fn()
+
+    const result = await executeGenerateFlow({
+      prompt: "test prompt",
+      generateCount: 2,
+      isDev: true,
+      isMockEnabled: false,
+      aspectRatio: "1:1",
+      selectedImages: ["data:image/png;base64,seed"],
+      generateImages,
+      onImageGenerated,
+    })
+
+    expect(generateImages).toHaveBeenCalledTimes(2)
+    expect(generateImages).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ count: 1 })
+    )
+    expect(generateImages).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ count: 1 })
+    )
+
+    expect(onImageGenerated).toHaveBeenCalledTimes(2)
+    expect(onImageGenerated).toHaveBeenNthCalledWith(1, {
+      index: 0,
+      imageUrl: "https://img.test/one.jpg",
+      remainingCredits: 7,
+    })
+    expect(onImageGenerated).toHaveBeenNthCalledWith(2, {
+      index: 1,
+      imageUrl: "https://img.test/two.jpg",
+      remainingCredits: 6,
+    })
+
+    expect(result.generatedSlots).toEqual([
+      {
+        generatedSrc: "https://img.test/one.jpg",
+        upscaledSrc: null,
+      },
+      {
+        generatedSrc: "https://img.test/two.jpg",
+        upscaledSrc: null,
+      },
+    ])
+    expect(result.remainingCredits).toBe(6)
+  })
+
   it("onUpscale updates only the selected generated slot", async () => {
     const upscaleImage = vi.fn(() =>
       Promise.resolve({
@@ -95,7 +157,9 @@ describe("image editor controller flows", () => {
       upscaleImage,
     })
 
-    expect(upscaleImage).toHaveBeenCalledWith({ image: "https://img.test/two.jpg" })
+    expect(upscaleImage).toHaveBeenCalledWith({
+      image: "https://img.test/two.jpg",
+    })
     expect(result.selectedId).toBe("generated-2")
     expect(result.generatedSlots[0]).toEqual({
       generatedSrc: "https://img.test/one.jpg",
@@ -109,10 +173,14 @@ describe("image editor controller flows", () => {
   })
 
   it("use generated as input writes expected slot", () => {
-    const slots = Array.from({ length: 3 }, () => null as null | {
-      previewUrl: string
-      inputSource: string
-    })
+    const slots = Array.from(
+      { length: 3 },
+      () =>
+        null as null | {
+          previewUrl: string
+          inputSource: string
+        }
+    )
 
     const next = withInputSlot(slots, 1, "https://img.test/one.jpg")
 

@@ -92,7 +92,8 @@ export function useImageEditorController({
 
   const [prompt, setPrompt] = useState("")
   const [generateCount, setGenerateCount] = useState(1)
-  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(DEFAULT_ASPECT_RATIO)
+  const [aspectRatio, setAspectRatio] =
+    useState<AspectRatio>(DEFAULT_ASPECT_RATIO)
   const [isMockEnabled, setIsMockEnabled] = useState(false)
   const [generatedSlots, setGeneratedSlots] = useState<GeneratedSlot[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
@@ -133,7 +134,9 @@ export function useImageEditorController({
   }, [aspectRatio, generateCount, generatedSlots])
 
   const selectedImage = useMemo(
-    () => generatedImages.find((item) => item.id === selectedId) ?? generatedImages[0],
+    () =>
+      generatedImages.find((item) => item.id === selectedId) ??
+      generatedImages[0],
     [generatedImages, selectedId]
   )
 
@@ -244,6 +247,20 @@ export function useImageEditorController({
         aspectRatio,
         selectedImages,
         generateImages: services.generateImages,
+        onImageGenerated: ({ index, imageUrl, remainingCredits }) => {
+          setGeneratedSlots((previous) => {
+            const next = [...previous]
+            next[index] = {
+              generatedSrc: imageUrl,
+              upscaledSrc: null,
+            }
+            return next
+          })
+
+          if (typeof remainingCredits === "number") {
+            onCreditsUpdated?.(remainingCredits)
+          }
+        },
       })
 
       setGeneratedSlots(result.generatedSlots)
@@ -313,7 +330,8 @@ export function useImageEditorController({
         onCreditsUpdated?.(result.remainingCredits)
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Image upscale failed"
+      const message =
+        error instanceof Error ? error.message : "Image upscale failed"
       if (isCreditsErrorMessage(message)) {
         setGenerateError(message)
       } else {
@@ -337,7 +355,8 @@ export function useImageEditorController({
           base64ToBlob: resolvedBase64ToBlob,
         })
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Image download failed"
+        const message =
+          error instanceof Error ? error.message : "Image download failed"
         setDownloadError(message)
       } finally {
         setIsDownloading(false)

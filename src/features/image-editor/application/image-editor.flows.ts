@@ -51,6 +51,11 @@ type ExecuteGenerateFlowOptions = {
   aspectRatio: AspectRatio
   selectedImages: string[]
   generateImages: ImageEditorServices["generateImages"]
+  onImageGenerated?: (generated: {
+    index: number
+    imageUrl: string
+    remainingCredits: number | null
+  }) => void
 }
 
 type ExecuteGenerateFlowResult = {
@@ -68,6 +73,7 @@ export async function executeGenerateFlow({
   aspectRatio,
   selectedImages,
   generateImages,
+  onImageGenerated,
 }: ExecuteGenerateFlowOptions): Promise<ExecuteGenerateFlowResult> {
   if (selectedImages.length === 0) {
     throw new Error("Please select at least one input image")
@@ -87,19 +93,36 @@ export async function executeGenerateFlow({
     outputQuality: 95,
   }
 
-  const response = await generateImages(payload)
-  if (!Array.isArray(response.images) || response.images.length === 0) {
-    throw new Error("No generated images returned")
-  }
+  const generated: string[] = []
+  let remainingCredits: number | null = null
 
-  const generated = Array.from({ length: safeCount }, (_, index) => {
-    const imageUrl = response.images[index]
+  for (let index = 0; index < safeCount; index += 1) {
+    const response = await generateImages({
+      ...payload,
+      count: 1,
+    })
+
+    if (!Array.isArray(response.images) || response.images.length === 0) {
+      throw new Error("No generated images returned")
+    }
+
+    const imageUrl = response.images[0]
     if (!imageUrl) {
       throw new Error(`Missing generated image for slot ${index + 1}`)
     }
 
-    return imageUrl
-  })
+    generated.push(imageUrl)
+    remainingCredits =
+      typeof response.remainingCredits === "number"
+        ? response.remainingCredits
+        : remainingCredits
+
+    onImageGenerated?.({
+      index,
+      imageUrl,
+      remainingCredits,
+    })
+  }
 
   return {
     generatedSlots: generated.map((imageUrl) => ({
@@ -107,10 +130,7 @@ export async function executeGenerateFlow({
       upscaledSrc: null,
     })),
     selectedId: generatedIdFromIndex(0),
-    remainingCredits:
-      typeof response.remainingCredits === "number"
-        ? response.remainingCredits
-        : null,
+    remainingCredits,
     payload,
   }
 }
