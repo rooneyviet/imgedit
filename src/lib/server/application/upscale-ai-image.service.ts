@@ -11,6 +11,10 @@ import {
   UPSCALE_REPLICATE_IMAGE_TASK_ID,
   type UpscaleReplicateImagePayload,
 } from "../../../../trigger/upscale-image"
+import {
+  UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID,
+  type UploadInputImagesToR2Result,
+} from "../../../../trigger/upload-input-images-to-r2"
 
 export type UpscaleImageRequest = UpscaleReplicateImagePayload & {
   accessToken: string
@@ -66,6 +70,62 @@ function extractRunOutputImageUrl(output: unknown): string {
   return value
 }
 
+function extractUploadedInputImages(
+  output: unknown
+): UploadInputImagesToR2Result {
+  if (!output || typeof output !== "object") {
+    throw new Error("Missing uploaded image output")
+  }
+
+  const value = output as {
+    inputImages?: unknown
+    inputImageObjectKeys?: unknown
+  }
+
+  const inputImages = Array.isArray(value.inputImages)
+    ? value.inputImages.filter(
+        (item): item is string => typeof item === "string" && item.length > 0
+      )
+    : []
+
+  const inputImageObjectKeys = Array.isArray(value.inputImageObjectKeys)
+    ? value.inputImageObjectKeys.filter(
+        (item): item is string => typeof item === "string" && item.length > 0
+      )
+    : []
+
+  if (inputImages.length === 0) {
+    throw new Error("Uploaded images did not include URLs")
+  }
+
+  return {
+    inputImages,
+    inputImageObjectKeys,
+  }
+}
+
+function isPublicHttpImageUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim())
+}
+
+async function toUploadableInputImage(value: string): Promise<string> {
+  if (!isPublicHttpImageUrl(value)) {
+    return value
+  }
+
+  const response = await fetch(value)
+  if (!response.ok) {
+    throw new Error(`Failed to download source image (${response.status})`)
+  }
+
+  const bytes = Buffer.from(await response.arrayBuffer())
+  if (bytes.length === 0) {
+    throw new Error("Downloaded source image was empty")
+  }
+
+  return bytes.toString("base64")
+}
+
 export async function upscaleAiImageUseCase(
   rawInput: unknown
 ): Promise<UpscaleImageResponse> {
@@ -85,8 +145,28 @@ export async function upscaleAiImageUseCase(
 
   await assertSufficientCredits(user.id, requiredCredits)
 
+  const uploadHandle = await tasks.trigger(UPLOAD_INPUT_IMAGES_TO_R2_TASK_ID, {
+    inputImagesDataUrls: [await toUploadableInputImage(input.image)],
+    outputFormat: "webp",
+    outputQuality: 82,
+    maxWidth: 1536,
+    maxHeight: 1536,
+  })
+
+  const uploadRun = await runs.poll(uploadHandle.id, {
+    pollIntervalMs: 1000,
+  })
+
+  if (!uploadRun.isSuccess) {
+    throw new Error(getErrorMessage(uploadRun.error))
+  }
+
+  const uploadedInputImage = extractUploadedInputImages(uploadRun.output)
+
   const handle = await tasks.trigger(UPSCALE_REPLICATE_IMAGE_TASK_ID, {
-    image: input.image,
+    image: uploadedInputImage.inputImages[0] ?? "",
+    inputImageObjectKeys: uploadedInputImage.inputImageObjectKeys,
+    deleteInputImagesOnSuccess: true,
   })
 
   const run = await runs.poll(handle.id, {
