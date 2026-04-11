@@ -71,7 +71,7 @@ export function InputImageSlot({
           type="button"
           onClick={() => onRemoveImage(index)}
           aria-label={`Remove image ${index + 1}`}
-          className="absolute top-0 right-0 z-10 inline-flex h-5 w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/10 bg-background/50 text-red-500 shadow-sm transition hover:bg-background"
+          className="absolute top-0 right-0 z-10 inline-flex h-5 w-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border/10 bg-background/50 text-destructive shadow-sm transition hover:bg-background"
         >
           <X size={12} />
         </button>

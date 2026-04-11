@@ -117,7 +117,7 @@ export function AuthDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-140 border-none bg-zinc-50 p-0 shadow-lg ring-0 sm:max-w-140"
+        className="max-w-140 border border-border bg-card p-0 shadow-lg ring-0 sm:max-w-140"
       >
         <DialogTitle className="sr-only">Authentication</DialogTitle>
         <div className="relative overflow-hidden">
@@ -138,14 +138,14 @@ export function AuthDialog({
                 <div className="flex h-8 w-8 items-center justify-center bg-primary text-primary-foreground">
                   <Pencil className="size-4" />
                 </div>
-                <span className="text-2xl font-black tracking-tighter text-zinc-900">
+                <span className="text-2xl font-black tracking-tighter text-foreground">
                   IMG Edit
                 </span>
               </div>
             </div>
 
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xs font-bold tracking-[0.3em] text-zinc-600">
+              <h2 className="text-xs font-bold tracking-[0.3em] text-muted-foreground">
                 {heading}
               </h2>
             </div>
@@ -154,7 +154,7 @@ export function AuthDialog({
               {mode === "register" ? (
                 <div className="space-y-2">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
+                    className="block text-[10px] font-bold tracking-widest text-muted-foreground"
                     htmlFor="display-name"
                   >
                     Display name
@@ -165,14 +165,14 @@ export function AuthDialog({
                     onChange={(event) => setDisplayName(event.target.value)}
                     placeholder="Operator Name"
                     disabled={isBusy}
-                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                    className="h-12 border-none bg-muted px-4 font-mono text-sm placeholder:text-muted-foreground/70"
                   />
                 </div>
               ) : null}
 
               <div className="space-y-2">
                 <label
-                  className="block text-[10px] font-bold tracking-widest text-zinc-500"
+                  className="block text-[10px] font-bold tracking-widest text-muted-foreground"
                   htmlFor="auth-email"
                 >
                   Email address
@@ -185,14 +185,14 @@ export function AuthDialog({
                   placeholder="user@workspace.io"
                   disabled={isBusy}
                   required
-                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                  className="h-12 border-none bg-muted px-4 font-mono text-sm placeholder:text-muted-foreground/70"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-end justify-between">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
+                    className="block text-[10px] font-bold tracking-widest text-muted-foreground"
                     htmlFor="auth-password"
                   >
                     Password
@@ -215,14 +215,14 @@ export function AuthDialog({
                   placeholder="••••••••••••"
                   disabled={isBusy}
                   required
-                  className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                  className="h-12 border-none bg-muted px-4 font-mono text-sm placeholder:text-muted-foreground/70"
                 />
               </div>
 
               {mode === "register" ? (
                 <div className="space-y-2">
                   <label
-                    className="block text-[10px] font-bold tracking-widest text-zinc-500"
+                    className="block text-[10px] font-bold tracking-widest text-muted-foreground"
                     htmlFor="auth-confirm-password"
                   >
                     Confirm password
@@ -235,7 +235,7 @@ export function AuthDialog({
                     placeholder="••••••••••••"
                     disabled={isBusy}
                     required
-                    className="h-12 border-none bg-zinc-100 px-4 font-mono text-sm placeholder:text-zinc-400"
+                    className="h-12 border-none bg-muted px-4 font-mono text-sm placeholder:text-muted-foreground/70"
                   />
                 </div>
               ) : null}
@@ -244,18 +244,18 @@ export function AuthDialog({
                 <Button
                   type="submit"
                   disabled={isBusy}
-                  className="h-14 w-full bg-gradient-to-br from-primary to-fuchsia-500 text-xs font-bold tracking-[0.2em] text-primary-foreground hover:opacity-90"
+                  className="h-14 w-full bg-linear-to-br from-primary to-accent text-xs font-bold tracking-[0.2em] text-primary-foreground hover:opacity-90"
                 >
                   {isBusy ? "Processing..." : submitLabel}
                   <ArrowRight className="size-4" />
                 </Button>
 
                 <div className="relative flex items-center py-1">
-                  <div className="grow border-t border-zinc-300/60" />
-                  <span className="mx-3 text-[9px] font-bold tracking-widest text-zinc-400">
+                  <div className="grow border-t border-border" />
+                  <span className="mx-3 text-[9px] font-bold tracking-widest text-muted-foreground">
                     Or use a provider
                   </span>
-                  <div className="grow border-t border-zinc-300/60" />
+                  <div className="grow border-t border-border" />
                 </div>
 
                 <Button
@@ -265,7 +265,7 @@ export function AuthDialog({
                   onClick={() =>
                     setProviderMessage("Google auth is coming soon in this app")
                   }
-                  className="h-14 w-full border-zinc-300/70 bg-zinc-50 text-xs font-bold tracking-[0.2em] text-zinc-800 hover:bg-zinc-100"
+                  className="h-14 w-full border-border bg-card text-xs font-bold tracking-[0.2em] text-foreground hover:bg-muted"
                 >
                   Continue with Google
                 </Button>
@@ -273,19 +273,19 @@ export function AuthDialog({
             </form>
 
             {verificationHint ? (
-              <div className="mt-5 bg-emerald-100 px-3 py-2 text-[10px] font-semibold tracking-wide text-emerald-800">
+              <div className="mt-5 bg-emerald-100 px-3 py-2 text-[10px] font-semibold tracking-wide text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
                 {verificationHint}. Check your inbox, then sign in.
               </div>
             ) : null}
 
             {providerMessage ? (
-              <p className="mt-4 text-[10px] font-semibold tracking-wide text-zinc-600">
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-muted-foreground">
                 {providerMessage}
               </p>
             ) : null}
 
             {activeError ? (
-              <p className="mt-4 text-[10px] font-semibold tracking-wide text-red-600">
+              <p className="mt-4 text-[10px] font-semibold tracking-wide text-destructive">
                 {activeError}
               </p>
             ) : null}

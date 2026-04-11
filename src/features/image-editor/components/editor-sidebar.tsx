@@ -155,8 +155,8 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           disabled={controller.isGenerateDisabled}
           className={`h-12 w-full gap-2 font-mono text-xs font-bold tracking-[0.2em] ${
             controller.isGenerateDisabled
-              ? "border border-border bg-zinc-200 text-zinc-500 shadow-none hover:opacity-100"
-              : "bg-linear-to-br from-primary to-fuchsia-500 text-primary-foreground hover:opacity-90"
+              ? "border border-border bg-muted text-muted-foreground shadow-none hover:opacity-100"
+              : "bg-linear-to-br from-primary to-accent text-primary-foreground hover:opacity-90"
           }`}
         >
           {controller.isGenerating ? (

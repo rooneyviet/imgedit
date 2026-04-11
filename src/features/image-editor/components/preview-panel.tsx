@@ -156,7 +156,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
           ) : null}
 
           {canShowCompareControl ? (
-            <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white">
+            <span className="inline-flex h-8 items-center rounded-md bg-amber-500 px-3 font-mono text-[10px] font-bold tracking-wide text-white dark:bg-amber-400 dark:text-amber-950">
               Upscaled
             </span>
           ) : null}
@@ -300,7 +300,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
             {selectedImage.status === "loading" ? (
               <div className="grid h-full w-full place-items-center">
                 <div className="h-full w-full">
-                  <Skeleton className="h-full w-full bg-zinc-300/70" />
+                  <Skeleton className="h-full w-full bg-muted-foreground/20" />
                 </div>
               </div>
             ) : selectedImage.src ? (
@@ -514,7 +514,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 </TransformComponent>
               </TransformWrapper>
             ) : (
-              <div className="flex h-full w-full items-center justify-center font-mono text-xs tracking-wider text-zinc-400">
+              <div className="flex h-full w-full items-center justify-center font-mono text-xs tracking-wider text-zinc-400 dark:text-zinc-500">
                 No image selected
               </div>
             )}
@@ -582,7 +582,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 ) : null}
 
                 {item.isUpscaled ? (
-                  <span className="absolute top-1 right-1 bg-amber-500 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white uppercase">
+                  <span className="absolute top-1 right-1 bg-amber-500 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white uppercase dark:bg-amber-400 dark:text-amber-950">
                     U
                   </span>
                 ) : null}
