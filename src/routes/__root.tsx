@@ -26,41 +26,13 @@ import {
   updateCachedRemainingCredits,
 } from "@/features/auth/infrastructure/auth-profile.queries"
 import { createPricingCatalogQueryOptions } from "@/features/pricing/infrastructure/pricing.queries"
+import {
+  THEME_BOOTSTRAP_SCRIPT,
+  setTheme,
+  useTheme,
+} from "@/features/theme/theme-store"
 import type { AppRouterContext } from "@/router"
 import { syncUserProfile } from "@/lib/server/sync-user-profile"
-
-const THEME_STORAGE_KEY = "imgedit-theme"
-const THEME_BOOTSTRAP_SCRIPT = `(() => {
-  const key = "${THEME_STORAGE_KEY}";
-  const storedTheme = window.localStorage.getItem(key);
-  const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const theme = storedTheme === "dark" || storedTheme === "light"
-    ? storedTheme
-    : prefersDarkMode
-      ? "dark"
-      : "light";
-
-  document.documentElement.classList.toggle("dark", theme === "dark");
-})();`
-
-type Theme = "light" | "dark"
-
-function getThemeFromDocument(): Theme {
-  if (typeof document === "undefined") {
-    return "light"
-  }
-
-  return document.documentElement.classList.contains("dark") ? "dark" : "light"
-}
-
-function applyTheme(theme: Theme) {
-  if (typeof document === "undefined") {
-    return
-  }
-
-  document.documentElement.classList.toggle("dark", theme === "dark")
-  window.localStorage.setItem(THEME_STORAGE_KEY, theme)
-}
 
 export const Route = createRootRouteWithContext<AppRouterContext>()({
   head: () => ({
@@ -96,13 +68,12 @@ function RootLayout() {
   const activeTab = pathname === "/pricing" ? "pricing" : "gallery"
   const auth = useAuth()
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
-  const [theme, setTheme] = useState<Theme>(() => getThemeFromDocument())
+  const theme = useTheme()
   const syncUserProfileServerFn = useServerFn(syncUserProfile)
 
   const handleThemeChange = useCallback((checked: boolean) => {
     const nextTheme = checked ? "dark" : "light"
     setTheme(nextTheme)
-    applyTheme(nextTheme)
   }, [])
 
   const profileSnapshotQuery = useQuery({
