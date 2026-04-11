@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { AppAuthProvider } from "@/features/auth/app-auth-context"
 import { AuthDialog } from "@/features/auth/auth-dialog"
 import { useAuth } from "@/features/auth/use-auth"
+import { selectResolvedAuthProfile } from "@/features/auth/domain/auth-profile.selectors"
 import {
   createAuthProfileSnapshotQueryOptions,
   updateCachedRemainingCredits,
@@ -110,16 +111,20 @@ function RootLayout() {
     : null
   const operationCosts = pricingCatalogQuery.data?.operationCosts
 
-  const userDisplayName =
-    profileSnapshot?.userDisplayName ?? auth.userDisplayName
-  const userEmail = profileSnapshot?.userEmail ?? auth.userEmail
-  const remainingCredits = profileSnapshot?.remainingCredits ?? null
-  const normalImageCreditCost =
-    profileSnapshot?.normalImageCreditCost ?? operationCosts?.normalImage ?? 0
-  const upscale4kCreditCost = operationCosts?.upscale4k ?? 0
-  const activePlanCode = profileSnapshot?.activePlanCode ?? null
-  const userLabel =
-    userDisplayName || userEmail || (auth.isAuthenticated ? "USER" : "GUEST")
+  const resolvedAuthProfile = selectResolvedAuthProfile({
+    auth,
+    profileSnapshot,
+    operationCosts,
+  })
+  const {
+    activePlanCode,
+    normalImageCreditCost,
+    remainingCredits,
+    upscale4kCreditCost,
+    userDisplayName,
+    userEmail,
+    userLabel,
+  } = resolvedAuthProfile
 
   const setRemainingCredits = useCallback(
     (nextRemainingCredits: number) => {
