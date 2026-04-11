@@ -48,12 +48,19 @@ type ExecuteGenerateFlowOptions = {
   generateCount: number
   isDev: boolean
   isMockEnabled: boolean
+  autoUpscale4k?: boolean
   aspectRatio: AspectRatio
   selectedImages: string[]
   generateImages: ImageEditorServices["generateImages"]
+  upscaleImage?: ImageEditorServices["upscaleImage"]
   onImageGenerated?: (generated: {
     index: number
     imageUrl: string
+    remainingCredits: number | null
+  }) => void
+  onImageUpscaled?: (upscaled: {
+    index: number
+    upscaledImageUrl: string
     remainingCredits: number | null
   }) => void
 }
@@ -70,10 +77,13 @@ export async function executeGenerateFlow({
   generateCount,
   isDev,
   isMockEnabled,
+  autoUpscale4k = false,
   aspectRatio,
   selectedImages,
   generateImages,
+  upscaleImage,
   onImageGenerated,
+  onImageUpscaled,
 }: ExecuteGenerateFlowOptions): Promise<ExecuteGenerateFlowResult> {
   if (selectedImages.length === 0) {
     throw new Error("Please select at least one input image")
@@ -94,6 +104,7 @@ export async function executeGenerateFlow({
   }
 
   const generated: string[] = []
+  const upscaled = new Map<number, string>()
   let remainingCredits: number | null = null
 
   for (let index = 0; index < safeCount; index += 1) {
@@ -122,12 +133,39 @@ export async function executeGenerateFlow({
       imageUrl,
       remainingCredits,
     })
+
+    if (autoUpscale4k) {
+      if (!upscaleImage) {
+        throw new Error("Upscale service is unavailable")
+      }
+
+      const upscaleResponse = await upscaleImage({
+        image: imageUrl,
+      })
+
+      const upscaledImageUrl = upscaleResponse.image?.trim()
+      if (!upscaledImageUrl) {
+        throw new Error(`Missing upscaled image for slot ${index + 1}`)
+      }
+
+      upscaled.set(index, upscaledImageUrl)
+      remainingCredits =
+        typeof upscaleResponse.remainingCredits === "number"
+          ? upscaleResponse.remainingCredits
+          : remainingCredits
+
+      onImageUpscaled?.({
+        index,
+        upscaledImageUrl,
+        remainingCredits,
+      })
+    }
   }
 
   return {
-    generatedSlots: generated.map((imageUrl) => ({
+    generatedSlots: generated.map((imageUrl, index) => ({
       generatedSrc: imageUrl,
-      upscaledSrc: null,
+      upscaledSrc: upscaled.get(index) ?? null,
     })),
     selectedId: generatedIdFromIndex(0),
     remainingCredits,

@@ -45,6 +45,7 @@ export type ImageEditorController = {
   generateCount: number
   aspectRatio: AspectRatio
   isMockEnabled: boolean
+  isUpscale4kEnabled: boolean
   generatedSlots: GeneratedSlot[]
   isGenerating: boolean
   isDownloading: boolean
@@ -66,6 +67,7 @@ export type ImageEditorController = {
   onGenerateCountChange: (count: number) => void
   onAspectRatioChange: (ratio: AspectRatio) => void
   onMockModeChange: (enabled: boolean) => void
+  onUpscale4kChange: (enabled: boolean) => void
   onSelectGeneratedImage: (id: string) => void
   onPickImage: (index: number, file?: File) => Promise<void>
   onRemoveImage: (index: number) => void
@@ -95,6 +97,7 @@ export function useImageEditorController({
   const [aspectRatio, setAspectRatio] =
     useState<AspectRatio>(DEFAULT_ASPECT_RATIO)
   const [isMockEnabled, setIsMockEnabled] = useState(false)
+  const [isUpscale4kEnabled, setIsUpscale4kEnabled] = useState(false)
   const [generatedSlots, setGeneratedSlots] = useState<GeneratedSlot[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -156,10 +159,18 @@ export function useImageEditorController({
 
   const estimatedGenerateCredits = useMemo(() => {
     const safeCount = clampGenerateCount(generateCount)
-    const safeUnitCost = Math.max(0, Math.floor(normalImageCreditCost))
+    const safeGenerateUnitCost = Math.max(0, Math.floor(normalImageCreditCost))
+    const safeUpscaleUnitCost = Math.max(0, Math.floor(upscale4kCreditCost))
+    const totalUnitCost =
+      safeGenerateUnitCost + (isUpscale4kEnabled ? safeUpscaleUnitCost : 0)
 
-    return safeCount * safeUnitCost
-  }, [generateCount, normalImageCreditCost])
+    return safeCount * totalUnitCost
+  }, [
+    generateCount,
+    isUpscale4kEnabled,
+    normalImageCreditCost,
+    upscale4kCreditCost,
+  ])
 
   const onPromptChange = useCallback((value: string) => {
     setPrompt(value)
@@ -175,6 +186,10 @@ export function useImageEditorController({
 
   const onMockModeChange = useCallback((enabled: boolean) => {
     setIsMockEnabled(enabled)
+  }, [])
+
+  const onUpscale4kChange = useCallback((enabled: boolean) => {
+    setIsUpscale4kEnabled(enabled)
   }, [])
 
   const onSelectGeneratedImage = useCallback((id: string) => {
@@ -244,9 +259,11 @@ export function useImageEditorController({
         generateCount: safeCount,
         isDev,
         isMockEnabled,
+        autoUpscale4k: isUpscale4kEnabled,
         aspectRatio,
         selectedImages,
         generateImages: services.generateImages,
+        upscaleImage: services.upscaleImage,
         onImageGenerated: ({ index, imageUrl, remainingCredits }) => {
           setGeneratedSlots((previous) => {
             const next = [...previous]
@@ -254,6 +271,24 @@ export function useImageEditorController({
               generatedSrc: imageUrl,
               upscaledSrc: null,
             }
+            return next
+          })
+
+          if (typeof remainingCredits === "number") {
+            onCreditsUpdated?.(remainingCredits)
+          }
+        },
+        onImageUpscaled: ({ index, upscaledImageUrl, remainingCredits }) => {
+          setGeneratedSlots((previous) => {
+            const next = [...previous]
+
+            if (next[index]) {
+              next[index] = {
+                ...next[index],
+                upscaledSrc: upscaledImageUrl,
+              }
+            }
+
             return next
           })
 
@@ -295,6 +330,7 @@ export function useImageEditorController({
     generateCount,
     isDev,
     isMockEnabled,
+    isUpscale4kEnabled,
     onCreditsUpdated,
     onGenerateUnauthorized,
     prompt,
@@ -371,6 +407,7 @@ export function useImageEditorController({
     generateCount,
     aspectRatio,
     isMockEnabled,
+    isUpscale4kEnabled,
     generatedSlots,
     isGenerating,
     isDownloading,
@@ -392,6 +429,7 @@ export function useImageEditorController({
     onGenerateCountChange,
     onAspectRatioChange,
     onMockModeChange,
+    onUpscale4kChange,
     onSelectGeneratedImage,
     onPickImage,
     onRemoveImage,

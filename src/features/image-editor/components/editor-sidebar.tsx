@@ -128,6 +128,24 @@ export function EditorSidebar({ controller }: EditorSidebarProps) {
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="upscale-4k"
+            checked={controller.isUpscale4kEnabled}
+            onCheckedChange={(checked) =>
+              controller.onUpscale4kChange(checked === true)
+            }
+            disabled={controller.isGenerating}
+            className="border-foreground/40 bg-background data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+          />
+          <Label
+            htmlFor="upscale-4k"
+            className="font-mono text-[10px] tracking-[0.15em]"
+          >
+            Upscale 4K
+          </Label>
+        </div>
+
         {controller.isDev ? (
           <div className="flex items-center gap-2">
             <Checkbox

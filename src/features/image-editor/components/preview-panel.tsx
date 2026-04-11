@@ -57,21 +57,16 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
   const [fullscreenZoomPercent, setFullscreenZoomPercent] = useState(100)
   const previewZoomRef = useRef<ReactZoomPanPinchContentRef | null>(null)
   const fullscreenZoomRef = useRef<ReactZoomPanPinchContentRef | null>(null)
-  const canShowCompareControl =
-    selectedImage.status === "ready" && selectedImage.isUpscaled
-  const hasCompareImages =
-    Boolean(selectedGeneratedSlot?.generatedSrc) &&
-    Boolean(selectedGeneratedSlot?.upscaledSrc)
+  const hasGeneratedDownload = Boolean(selectedGeneratedSlot?.generatedSrc)
+  const hasUpscaledDownload = Boolean(selectedGeneratedSlot?.upscaledSrc)
+  const hasAnyDownload = hasGeneratedDownload || hasUpscaledDownload
+  const canShowCompareControl = hasGeneratedDownload && hasUpscaledDownload
   const isCompareZoomCompatible = previewZoomPercent === 100
   const isFullscreenCompareZoomCompatible = fullscreenZoomPercent === 100
   const showCompareSlider =
-    canShowCompareControl &&
-    hasCompareImages &&
-    isCompareZoomCompatible &&
-    isCompareEnabled
+    canShowCompareControl && isCompareZoomCompatible && isCompareEnabled
   const showFullscreenCompareSlider =
     canShowCompareControl &&
-    hasCompareImages &&
     isFullscreenCompareZoomCompatible &&
     isCompareEnabled
 
@@ -161,7 +156,7 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
             </span>
           ) : null}
 
-          {selectedGeneratedSlot?.generatedSrc ? (
+          {hasAnyDownload ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -210,33 +205,35 @@ export function PreviewPanel({ controller }: PreviewPanelProps) {
                 align="end"
                 className="min-w-56 rounded-none border border-border bg-popover text-popover-foreground shadow-xl"
               >
-                <DropdownMenuItem
-                  disabled={controller.isDownloading}
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    const generatedSrc = selectedGeneratedSlot.generatedSrc
-                    if (!generatedSrc) {
-                      return
-                    }
-
-                    void controller.onDownloadImage(
-                      generatedSrc,
-                      `${selectedImage.id}-generated.jpg`
-                    )
-                  }}
-                  className={DROPDOWN_ITEM_CLASSNAME}
-                >
-                  {controller.isDownloading
-                    ? "Downloading..."
-                    : "Download Generated"}
-                </DropdownMenuItem>
-
-                {selectedGeneratedSlot.upscaledSrc ? (
+                {hasGeneratedDownload ? (
                   <DropdownMenuItem
                     disabled={controller.isDownloading}
                     onSelect={(event) => {
                       event.preventDefault()
-                      const upscaledSrc = selectedGeneratedSlot.upscaledSrc
+                      const generatedSrc = selectedGeneratedSlot?.generatedSrc
+                      if (!generatedSrc) {
+                        return
+                      }
+
+                      void controller.onDownloadImage(
+                        generatedSrc,
+                        `${selectedImage.id}-generated.jpg`
+                      )
+                    }}
+                    className={DROPDOWN_ITEM_CLASSNAME}
+                  >
+                    {controller.isDownloading
+                      ? "Downloading..."
+                      : "Download Generated"}
+                  </DropdownMenuItem>
+                ) : null}
+
+                {hasUpscaledDownload ? (
+                  <DropdownMenuItem
+                    disabled={controller.isDownloading}
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      const upscaledSrc = selectedGeneratedSlot?.upscaledSrc
                       if (!upscaledSrc) {
                         return
                       }

@@ -128,6 +128,84 @@ describe("image editor controller flows", () => {
     expect(result.remainingCredits).toBe(6)
   })
 
+  it("onGenerate can auto-upscale each generated image", async () => {
+    const generateImages = vi
+      .fn()
+      .mockResolvedValueOnce({
+        images: ["https://img.test/one.jpg"],
+        chargedCredits: 3,
+        remainingCredits: 9,
+      })
+      .mockResolvedValueOnce({
+        images: ["https://img.test/two.jpg"],
+        chargedCredits: 3,
+        remainingCredits: 7,
+      })
+    const upscaleImage = vi
+      .fn()
+      .mockResolvedValueOnce({
+        image: "https://img.test/one-upscaled.jpg",
+        chargedCredits: 2,
+        remainingCredits: 8,
+      })
+      .mockResolvedValueOnce({
+        image: "https://img.test/two-upscaled.jpg",
+        chargedCredits: 2,
+        remainingCredits: 6,
+      })
+
+    const onImageGenerated = vi.fn()
+    const onImageUpscaled = vi.fn()
+
+    const result = await executeGenerateFlow({
+      prompt: "test prompt",
+      generateCount: 2,
+      isDev: true,
+      isMockEnabled: false,
+      autoUpscale4k: true,
+      aspectRatio: "1:1",
+      selectedImages: ["data:image/png;base64,seed"],
+      generateImages,
+      upscaleImage,
+      onImageGenerated,
+      onImageUpscaled,
+    })
+
+    expect(generateImages).toHaveBeenCalledTimes(2)
+    expect(upscaleImage).toHaveBeenCalledTimes(2)
+    expect(upscaleImage).toHaveBeenNthCalledWith(1, {
+      image: "https://img.test/one.jpg",
+    })
+    expect(upscaleImage).toHaveBeenNthCalledWith(2, {
+      image: "https://img.test/two.jpg",
+    })
+
+    expect(onImageGenerated).toHaveBeenCalledTimes(2)
+    expect(onImageUpscaled).toHaveBeenCalledTimes(2)
+    expect(onImageUpscaled).toHaveBeenNthCalledWith(1, {
+      index: 0,
+      upscaledImageUrl: "https://img.test/one-upscaled.jpg",
+      remainingCredits: 8,
+    })
+    expect(onImageUpscaled).toHaveBeenNthCalledWith(2, {
+      index: 1,
+      upscaledImageUrl: "https://img.test/two-upscaled.jpg",
+      remainingCredits: 6,
+    })
+
+    expect(result.generatedSlots).toEqual([
+      {
+        generatedSrc: "https://img.test/one.jpg",
+        upscaledSrc: "https://img.test/one-upscaled.jpg",
+      },
+      {
+        generatedSrc: "https://img.test/two.jpg",
+        upscaledSrc: "https://img.test/two-upscaled.jpg",
+      },
+    ])
+    expect(result.remainingCredits).toBe(6)
+  })
+
   it("onUpscale updates only the selected generated slot", async () => {
     const upscaleImage = vi.fn(() =>
       Promise.resolve({
