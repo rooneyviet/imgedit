@@ -11,9 +11,11 @@ const PLAN_TIER: Record<string, number> = {
   ANNUAL: 2,
 }
 
-export function getFreePlanButtonState(activePlanCode: PlanCode): PlanButtonState {
+export function getFreePlanButtonState(
+  activePlanCode: PlanCode
+): PlanButtonState {
   if (activePlanCode === "FREE") {
-    return { label: "CURRENT PLAN", disabled: false }
+    return { label: "CURRENT PLAN", disabled: true }
   }
 
   const activeTier = activePlanCode ? (PLAN_TIER[activePlanCode] ?? 0) : -1
@@ -37,7 +39,10 @@ export function getPaidPlanButtonState(
 
   if (activeTier >= targetTier) {
     return {
-      label: targetPlanCode === "MONTHLY" ? "CHOOSE MONTHLY PLAN" : "CHOOSE ANNUAL PLAN",
+      label:
+        targetPlanCode === "MONTHLY"
+          ? "CHOOSE MONTHLY PLAN"
+          : "CHOOSE ANNUAL PLAN",
       disabled: true,
     }
   }
@@ -48,13 +53,19 @@ export function getPaidPlanButtonState(
 
   if (pendingPlanCode !== null) {
     return {
-      label: targetPlanCode === "MONTHLY" ? "CHOOSE MONTHLY PLAN" : "CHOOSE ANNUAL PLAN",
+      label:
+        targetPlanCode === "MONTHLY"
+          ? "CHOOSE MONTHLY PLAN"
+          : "CHOOSE ANNUAL PLAN",
       disabled: true,
     }
   }
 
   return {
-    label: targetPlanCode === "MONTHLY" ? "CHOOSE MONTHLY PLAN" : "CHOOSE ANNUAL PLAN",
+    label:
+      targetPlanCode === "MONTHLY"
+        ? "CHOOSE MONTHLY PLAN"
+        : "CHOOSE ANNUAL PLAN",
     disabled: false,
   }
 }
